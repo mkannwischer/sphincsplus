@@ -17,6 +17,8 @@ ThashT = Literal['simple', 'robust']
 
 ImplementationLiteralT = Literal['ref'] | Literal['avx2'] | Literal['aesni'] | Literal['a64']
 
+BUILD_ENABLED = False
+
 
 def exclude_file(file: Path) -> bool:
     filename: str = str(file.name)
@@ -33,6 +35,8 @@ def exclude_file(file: Path) -> bool:
     if filename.startswith("fips202.") or filename.startswith("sha2."):
         return True
     if filename == 'Makefile':
+        return True
+    if filename == 'api.h':
         return True
 
     return False
@@ -188,9 +192,9 @@ class Sphincs:
     def name(self) -> str:
         return f"SPHINCS+-{self.hash}-{self.size}{self.variant[0]}-{self.thash}"
 
-    @property
-    def ns_name(self) -> str:
-        return "SPX"
+    def ns_name(self, impl) -> str:
+        nsname = self.basefile.replace("-", "").replace("_", "").upper()
+        return f"PQCLEAN_{nsname}_{get_pqclean_impl_name(impl).upper()}"
 
     @property
     def basefile(self) -> str:
@@ -231,8 +235,8 @@ class Sphincs:
                 implpath = Path('haraka-aesni')
 
         # We definitely need api.h and the LICENSE
+        yield (implpath / 'api.h', 'nistapi.h')
         yield (Path('LICENSE'), 'LICENSE')
-        yield (Path(f'metadata/api/{self.basefile}.h'), 'api.h')
 
         # resolve params.h
         yield (implpath / 'params' / f"params-sphincs-{self.hash}-{self.size}{self.variant[0]}.h", 'params.h')
@@ -273,11 +277,11 @@ SPHINCSES: List[Sphincs] = [
 ]
 
 
-def gen_api_h(params: Sphincs) -> str:
-    ns = params.ns_name
+def gen_api_h(params: Sphincs, impl: ImplementationLiteralT) -> str:
+    ns = params.ns_name(impl)
     return (f"""\
-#ifndef _{ns}_API_H
-#define _{ns}_API_H
+#ifndef {ns}_API_H
+#define {ns}_API_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -360,11 +364,11 @@ def pqclean_metadata(params: Sphincs) -> str:
     output = (f"""\
 name: {params.name}
 type: signature
-claimed-nist-level: 1
-length-public-key: 32
-length-secret-key: 64
-length-signature: 17088
-testvectors-sha256: 8a2d4399b3d1282530804d319dc4fb91fa66c3e4c42bd7b859a3eaa96c5f515f
+claimed-nist-level: {params.nist_level}
+length-public-key: {params.pk_bytes}
+length-secret-key: {params.sk_bytes}
+length-signature: {params.sig_bytes}
+testvectors-sha256: testvectorvalue
 nistkat-sha256: {params.nist_kat_hash}
 principal-submitters:
   - Andreas Hülsing
@@ -426,6 +430,7 @@ def implementation_metadata(impl):
 def test_api_h(params: Sphincs):
     subprocess.run(
             ["make", "-B", "-C", "metadata", "test_api_h",
+            f"NS={params.ns_name('ref')}",
             f"THASH={params.thash}",
             f"PARAMS=sphincs-{params.hash}-{params.size}{params.variant[0]}"],
             check=True, capture_output=True)
@@ -433,6 +438,8 @@ def test_api_h(params: Sphincs):
 
 
 def test_build(implpath) -> None:
+    if not BUILD_ENABLED:
+        return
     if implpath.name == "aarch64":
         return
     subprocess.run(
@@ -560,6 +567,8 @@ clean:
 
 if __name__ == "__main__":
     import shutil
+    import tempfile
+    import hashlib
 
     logging.basicConfig(level=logging.DEBUG)
 
@@ -567,12 +576,12 @@ if __name__ == "__main__":
         apipath = Path('metadata/api') / (params.basefile + '.h')
         metapath = Path('metadata/meta') / (params.basefile + '.yml')
         with open(apipath, 'w') as fh:
-            fh.write(gen_api_h(params))
+            fh.write(gen_api_h(params, 'ref'))
         with open(metapath, 'w') as fh:
             fh.write(pqclean_metadata(params))
         test_api_h(params)
 
-    destpath = Path("pqclean-export/crypto_kem")
+    destpath = Path("pqclean-export/crypto_sign")
     if destpath.exists():
         logging.warning("Removing existing destination path")
         shutil.rmtree(destpath)
@@ -590,12 +599,38 @@ if __name__ == "__main__":
         for impl in params.implementations:
             implpath = sphincspath / get_pqclean_impl_name(impl)
             implpath.mkdir()
+
+            with (implpath / "api.h").open("w") as fh:
+                fh.write(gen_api_h(params, impl))
+
             for (srcfile, destfn) in params.get_source_files(impl):
                 logging.debug("Copying %s to %s", srcfile, destfn)
                 shutil.copyfile(srcfile, implpath / destfn, follow_symlinks=True)
 
             replace_in_file(implpath / "params.h", r"^#include \"\.\./", "#include \"")
+            replace_in_file(implpath / "params.h", "SPX_##s", f"{params.ns_name(impl)}_##s")
+            replace_in_file(implpath / "sign.c", r"#include \"api\.h\"", "#include \"nistapi.h\"")
 
             gen_makefile(params, implpath)
             test_build(implpath)
 
+    for params in SPHINCSES:
+        sourcepath = destpath / params.basefile / "clean"
+
+        subprocess.run(["make", "-C", sourcepath], check=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run(
+                ["make", "-C", "pqclean-export/test", "testvectors",
+                 "TYPE=sign",
+                 f"SCHEME={params.basefile}",
+                 f"SCHEME_DIR={sourcepath.resolve()}",
+                 f"IMPLEMENTATION=clean",
+                 f"DEST_DIR={tmpdir}"],
+                check=True)
+            out = subprocess.run(
+                    [f"{tmpdir}/testvectors_{params.basefile}_clean"],
+                    capture_output=True,
+                    check=True)
+        output = out.stdout.replace(b'\r', b'')
+        vector = hashlib.sha256(output).hexdigest().lower()
+        replace_in_file(destpath / params.basefile / "META.yml", "testvectorvalue", vector)
