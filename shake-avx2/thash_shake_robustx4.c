@@ -31,14 +31,14 @@ void thashx4(unsigned char *out0,
         }
         for (int i = 0; i < 4; i++) {
             state[SPX_N/8+i] = _mm256_set_epi32(
-                addrx4[3*8+1+2*i],
-                addrx4[3*8+2*i],
-                addrx4[2*8+1+2*i],
-                addrx4[2*8+2*i],
-                addrx4[8+1+2*i],
-                addrx4[8+2*i],
-                addrx4[1+2*i],
-                addrx4[2*i]
+                (int)addrx4[3*8+1+2*i],
+                (int)addrx4[3*8+2*i],
+                (int)addrx4[2*8+1+2*i],
+                (int)addrx4[2*8+2*i],
+                (int)addrx4[8+1+2*i],
+                (int)addrx4[8+2*i],
+                (int)addrx4[1+2*i],
+                (int)addrx4[2*i]
             );
         }
 

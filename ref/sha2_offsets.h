@@ -1,6 +1,12 @@
 #ifndef SHA2_OFFSETS_H_
 #define SHA2_OFFSETS_H_
 
+#define SPX_SHA256_BLOCK_BYTES 64
+#define SPX_SHA256_OUTPUT_BYTES 32
+
+#define SPX_SHA512_BLOCK_BYTES 128
+#define SPX_SHA512_OUTPUT_BYTES 64
+
 /*
  * Offsets of various fields in the address structure when we use SHA2 as
  * the Sphincs+ hash function

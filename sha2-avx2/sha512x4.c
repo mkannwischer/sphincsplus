@@ -10,14 +10,6 @@
 typedef uint64_t u64;
 typedef __m256i u256;
 
-static void sha512_transform4x(
-    sha512x4ctx *ctx,
-    const unsigned char *d0,
-    const unsigned char *d1,
-    const unsigned char *d2,
-    const unsigned char *d3
-);
-
 #define BYTESWAP(x) _mm256_shuffle_epi8(x, _mm256_set_epi8(0x8,0x9,0xa,0xb,0xc,0xd,0xe,0xf,0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xa,0xb,0xc,0xd,0xe,0xf,0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7))
 #define STORE(dest,src) _mm256_storeu_si256((__m256i *)(dest),src)
 
@@ -51,8 +43,8 @@ static void transpose(u256 s[4]) {
 }
 
 
-static void sha512_init4x(sha512x4ctx *ctx) {
-#define SET4(x) _mm256_set_epi64x(x, x, x, x)
+void sha512_init4x(sha512x4ctx *ctx) {
+#define SET4(x) _mm256_set_epi64x((long long)x, (long long)x, (long long)x, (long long)x)
     ctx->s[0] = SET4(0x6a09e667f3bcc908ULL);
     ctx->s[1] = SET4(0xbb67ae8584caa73bULL);
     ctx->s[2] = SET4(0x3c6ef372fe94f82bULL);
@@ -107,7 +99,7 @@ static u256 GAMMA1_AVX(u256 x) {
 }
 
 #define SHA512ROUND_AVX(a, b, c, d, e, f, g, h, rc, w) \
-    T0 = ADD5_64(h, w, SIGMA1_AVX(e), CH_AVX(e, f, g), _mm256_set1_epi64x(RC[rc])); \
+    T0 = ADD5_64(h, w, SIGMA1_AVX(e), CH_AVX(e, f, g), _mm256_set1_epi64x((long long)RC[rc])); \
     T1 = ADD64(SIGMA0_AVX(a), MAJ_AVX(a, b, c)); \
     d = ADD64(d, T0); \
     h = ADD64(T0, T1);
@@ -155,7 +147,7 @@ static const unsigned long long RC[80] = {
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
 
-static void sha512_transform4x(
+void sha512_transform4x(
         sha512x4ctx *ctx,
         const unsigned char *d0,
         const unsigned char *d1,
@@ -293,7 +285,7 @@ static void _sha512x4(
         i += 128;
     }
 
-    ctx->datalen = inlen - i;
+    ctx->datalen = (unsigned int)(inlen - i);
     memcpy(&ctx->msgblocks[128*0], in0 + i, ctx->datalen);
     memcpy(&ctx->msgblocks[128*1], in1 + i, ctx->datalen);
     memcpy(&ctx->msgblocks[128*2], in2 + i, ctx->datalen);
@@ -328,16 +320,16 @@ static void _sha512x4(
     }
 
     // Add length of the message to each block
-    ctx->msglen += ctx->datalen * 8;
+    ctx->msglen += (unsigned long long)(ctx->datalen) * 8;
     for (i = 0; i < 4; i++) {
-        ctx->msgblocks[128*i + 127] = ctx->msglen;
-        ctx->msgblocks[128*i + 126] = ctx->msglen >> 8;
-        ctx->msgblocks[128*i + 125] = ctx->msglen >> 16;
-        ctx->msgblocks[128*i + 124] = ctx->msglen >> 24;
-        ctx->msgblocks[128*i + 123] = ctx->msglen >> 32;
-        ctx->msgblocks[128*i + 122] = ctx->msglen >> 40;
-        ctx->msgblocks[128*i + 121] = ctx->msglen >> 48;
-        ctx->msgblocks[128*i + 120] = ctx->msglen >> 56;
+        ctx->msgblocks[128*i + 127] = (unsigned char)(ctx->msglen);
+        ctx->msgblocks[128*i + 126] = (unsigned char)(ctx->msglen >> 8);
+        ctx->msgblocks[128*i + 125] = (unsigned char)(ctx->msglen >> 16);
+        ctx->msgblocks[128*i + 124] = (unsigned char)(ctx->msglen >> 24);
+        ctx->msgblocks[128*i + 123] = (unsigned char)(ctx->msglen >> 32);
+        ctx->msgblocks[128*i + 122] = (unsigned char)(ctx->msglen >> 40);
+        ctx->msgblocks[128*i + 121] = (unsigned char)(ctx->msglen >> 48);
+        ctx->msgblocks[128*i + 120] = (unsigned char)(ctx->msglen >> 56);
 	memset( &ctx->msgblocks[128*i + 112], 0, 8 );
     }
     sha512_transform4x(
@@ -386,7 +378,7 @@ void mgf1x4_512(unsigned char *outx4, unsigned long outlen,
 {
     unsigned char inbufx4[4*(inlen + 4)];
     unsigned char outbuf[4*64];
-    unsigned long i;
+    uint32_t i;
     unsigned int j;
 
     memcpy(inbufx4 + 0*(inlen + 4), in0, inlen);
@@ -397,7 +389,7 @@ void mgf1x4_512(unsigned char *outx4, unsigned long outlen,
     /* While we can fit in at least another full block of SHA512 output.. */
     unsigned long remaining = outlen;
     for (i = 0; remaining > 0; i++) {
-        unsigned this_step = SPX_SHA512_OUTPUT_BYTES;
+        unsigned long this_step = SPX_SHA512_OUTPUT_BYTES;
         if (this_step > remaining) this_step = remaining;
         remaining -= this_step;
         for (j = 0; j < 4; j++) {

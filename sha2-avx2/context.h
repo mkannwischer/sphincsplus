@@ -6,7 +6,9 @@
 #include "params.h"
 #include "sha2.h"
 #include "sha256avx.h"
+#if SPX_SHA512
 #include "sha512x4.h"
+#endif
 
 typedef struct {
     uint8_t pub_seed[SPX_N];

@@ -53,7 +53,7 @@ void treehashx8(unsigned char *root, unsigned char *auth_path,
         /* of current[].  These give the offset of the actual start */
 
     uint32_t idx;
-    uint32_t max_idx = (1 << (tree_height-3)) - 1;
+    uint32_t max_idx = ((uint32_t)1 << (tree_height-3)) - 1;
     for (idx = 0;; idx++) {
         unsigned char current[8*SPX_N];   /* Current logical node */
         gen_leafx8( current, ctx, 8*idx + idx_offset,
@@ -78,7 +78,7 @@ void treehashx8(unsigned char *root, unsigned char *auth_path,
                 /* Adjust it so that the left-most node of the part of */
                 /* the tree that we're processing has index 0 */
                 prev_left_adj = left_adj;
-                left_adj = 8 - (1 << (tree_height - h - 1));
+                left_adj = (uint32_t)(8 - (1 << (tree_height - h - 1)));
             }
 
             /* Check if we hit the top of the tree */
@@ -92,7 +92,7 @@ void treehashx8(unsigned char *root, unsigned char *auth_path,
              * Check if one of the nodes we have is a part of the
              * authentication path; if it is, write it out
              */
-            if ((((internal_idx << 3) ^ internal_leaf) & ~0x7) == 0) {
+            if ((((internal_idx << 3) ^ internal_leaf) & ~0x7U) == 0) {
                 memcpy( &auth_path[ h * SPX_N ],
                         &current[(((internal_leaf&7)^1) + prev_left_adj) * SPX_N],
                         SPX_N );
@@ -112,12 +112,12 @@ void treehashx8(unsigned char *root, unsigned char *auth_path,
             /* Now combine the left and right logical nodes together */
 
             /* Set the address of the node we're creating. */
-            int j;
+            uint32_t j;
             internal_idx_offset >>= 1;
             for (j = 0; j < 8; j++) {
                 set_tree_height(tree_addrx8 + j*8, h + 1);
                 set_tree_index(tree_addrx8 + j*8,
-                     (8/2) * (internal_idx&~1) + j - left_adj + internal_idx_offset );
+                     (8/2) * (internal_idx&~1U) + j - left_adj + internal_idx_offset );
             }
             unsigned char *left = &stackx8[h * 8 * SPX_N];
             thashx8( &current[0 * SPX_N],

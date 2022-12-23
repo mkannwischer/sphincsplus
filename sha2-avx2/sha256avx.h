@@ -7,7 +7,7 @@
 typedef struct SHA256state {
     __m256i s[8];
     unsigned char msgblocks[8*64];
-    int datalen;
+    unsigned int datalen;
     unsigned long long msglen;
 } sha256x8ctx;
 

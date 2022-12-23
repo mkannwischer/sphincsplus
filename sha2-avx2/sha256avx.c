@@ -59,7 +59,7 @@ static const unsigned int RC[] = {
 #define WSIGMA0_AVX(x) XOR3(ROTR32(x, 7), ROTR32(x, 18), SHIFTR32(x, 3))
 
 #define SHA256ROUND_AVX(a, b, c, d, e, f, g, h, rc, w) \
-    T0 = ADD5_32(h, SIGMA1_AVX(e), CH_AVX(e, f, g), _mm256_set1_epi32(RC[rc]), w); \
+    T0 = ADD5_32(h, SIGMA1_AVX(e), CH_AVX(e, f, g), _mm256_set1_epi32((int)RC[rc]), w); \
     d = ADD32(d, T0); \
     T1 = ADD32(SIGMA0_AVX(a), MAJ_AVX(a, b, c)); \
     h = ADD32(T0, T1);
@@ -99,14 +99,14 @@ void sha256_ctx_clone8x(sha256x8ctx *out, const sha256x8ctx *in) {
 }
 
 void sha256_init8x(sha256x8ctx *ctx) {
-    ctx->s[0] = _mm256_set_epi32(0x6a09e667,0x6a09e667,0x6a09e667,0x6a09e667,0x6a09e667,0x6a09e667,0x6a09e667,0x6a09e667);
-    ctx->s[1] = _mm256_set_epi32(0xbb67ae85,0xbb67ae85,0xbb67ae85,0xbb67ae85,0xbb67ae85,0xbb67ae85,0xbb67ae85,0xbb67ae85);
-    ctx->s[2] = _mm256_set_epi32(0x3c6ef372,0x3c6ef372,0x3c6ef372,0x3c6ef372,0x3c6ef372,0x3c6ef372,0x3c6ef372,0x3c6ef372);
-    ctx->s[3] = _mm256_set_epi32(0xa54ff53a,0xa54ff53a,0xa54ff53a,0xa54ff53a,0xa54ff53a,0xa54ff53a,0xa54ff53a,0xa54ff53a);
-    ctx->s[4] = _mm256_set_epi32(0x510e527f,0x510e527f,0x510e527f,0x510e527f,0x510e527f,0x510e527f,0x510e527f,0x510e527f);
-    ctx->s[5] = _mm256_set_epi32(0x9b05688c,0x9b05688c,0x9b05688c,0x9b05688c,0x9b05688c,0x9b05688c,0x9b05688c,0x9b05688c);
-    ctx->s[6] = _mm256_set_epi32(0x1f83d9ab,0x1f83d9ab,0x1f83d9ab,0x1f83d9ab,0x1f83d9ab,0x1f83d9ab,0x1f83d9ab,0x1f83d9ab);
-    ctx->s[7] = _mm256_set_epi32(0x5be0cd19,0x5be0cd19,0x5be0cd19,0x5be0cd19,0x5be0cd19,0x5be0cd19,0x5be0cd19,0x5be0cd19);
+    ctx->s[0] = _mm256_set_epi32((int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667,(int)0x6a09e667);
+    ctx->s[1] = _mm256_set_epi32((int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85,(int)0xbb67ae85);
+    ctx->s[2] = _mm256_set_epi32((int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372,(int)0x3c6ef372);
+    ctx->s[3] = _mm256_set_epi32((int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a,(int)0xa54ff53a);
+    ctx->s[4] = _mm256_set_epi32((int)0x510e527f,(int)0x510e527f,(int)0x510e527f,(int)0x510e527f,(int)0x510e527f,(int)0x510e527f,(int)0x510e527f,(int)0x510e527f);
+    ctx->s[5] = _mm256_set_epi32((int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c,(int)0x9b05688c);
+    ctx->s[6] = _mm256_set_epi32((int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab,(int)0x1f83d9ab);
+    ctx->s[7] = _mm256_set_epi32((int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19,(int)0x5be0cd19);
 
     ctx->datalen = 0;
     ctx->msglen = 0;
@@ -157,14 +157,14 @@ void sha256_final8x(sha256x8ctx *ctx,
     // Add length of the message to each block
     ctx->msglen += ctx->datalen * 8;
     for (i = 0; i < 8; i++) {
-        ctx->msgblocks[64*i + 63] = ctx->msglen;
-        ctx->msgblocks[64*i + 62] = ctx->msglen >> 8;
-        ctx->msgblocks[64*i + 61] = ctx->msglen >> 16;
-        ctx->msgblocks[64*i + 60] = ctx->msglen >> 24;
-        ctx->msgblocks[64*i + 59] = ctx->msglen >> 32;
-        ctx->msgblocks[64*i + 58] = ctx->msglen >> 40;
-        ctx->msgblocks[64*i + 57] = ctx->msglen >> 48;
-        ctx->msgblocks[64*i + 56] = ctx->msglen >> 56;
+        ctx->msgblocks[64*i + 63] = (unsigned char)(ctx->msglen);
+        ctx->msgblocks[64*i + 62] = (unsigned char)(ctx->msglen >> 8);
+        ctx->msgblocks[64*i + 61] = (unsigned char)(ctx->msglen >> 16);
+        ctx->msgblocks[64*i + 60] = (unsigned char)(ctx->msglen >> 24);
+        ctx->msgblocks[64*i + 59] = (unsigned char)(ctx->msglen >> 32);
+        ctx->msgblocks[64*i + 58] = (unsigned char)(ctx->msglen >> 40);
+        ctx->msgblocks[64*i + 57] = (unsigned char)(ctx->msglen >> 48);
+        ctx->msgblocks[64*i + 56] = (unsigned char)(ctx->msglen >> 56);
     }
     sha256_transform8x(ctx,
         &ctx->msgblocks[64*0],

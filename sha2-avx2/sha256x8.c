@@ -39,7 +39,7 @@ static void _sha256x8(
         ctx->msglen += 512;
     }
 
-    int bytes_to_copy = inlen - i;
+    size_t bytes_to_copy = (size_t)(inlen - i);
     memcpy(&ctx->msgblocks[64*0], in0 + i, bytes_to_copy);
     memcpy(&ctx->msgblocks[64*1], in1 + i, bytes_to_copy);
     memcpy(&ctx->msgblocks[64*2], in2 + i, bytes_to_copy);
@@ -48,7 +48,7 @@ static void _sha256x8(
     memcpy(&ctx->msgblocks[64*5], in5 + i, bytes_to_copy);
     memcpy(&ctx->msgblocks[64*6], in6 + i, bytes_to_copy);
     memcpy(&ctx->msgblocks[64*7], in7 + i, bytes_to_copy);
-    ctx->datalen = bytes_to_copy;
+    ctx->datalen = (unsigned int)bytes_to_copy;
 
     sha256_final8x(ctx, out0, out1, out2, out3, out4, out5, out6, out7);
 }
@@ -122,7 +122,7 @@ void mgf1x8(unsigned char *outx8, unsigned long outlen,
 {
     unsigned char inbufx8[8*(inlen + 4)];
     unsigned char outbufx8[8*SPX_SHA256_OUTPUT_BYTES];
-    unsigned long i;
+    uint32_t i;
     unsigned int j;
 
     memcpy(inbufx8 + 0*(inlen + 4), in0, inlen);
