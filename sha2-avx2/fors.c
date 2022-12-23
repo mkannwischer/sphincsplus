@@ -3,14 +3,15 @@
 #include <string.h>
 
 #include "fors.h"
-#include "utils.h"
-#include "utilsx8.h"
+
+
+#include "address.h"
 #include "hash.h"
 #include "hashx8.h"
 #include "thash.h"
 #include "thashx8.h"
-#include "address.h"
-
+#include "utils.h"
+#include "utilsx8.h"
 static void fors_gen_sk(unsigned char *sk, const spx_ctx *ctx,
                         uint32_t fors_leaf_addr[8])
 {

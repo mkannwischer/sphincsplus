@@ -1,10 +1,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "address.h"
-#include "params.h"
-#include "fips202x4.h"
 #include "hashx4.h"
+
+#include "address.h"
+#include "fips202x4.h"
+#include "params.h"
 
 extern void KeccakP1600times4_PermuteAll_24rounds(__m256i *s);
 

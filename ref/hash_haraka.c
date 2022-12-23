@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "address.h"
-#include "utils.h"
 #include "params.h"
+#include "utils.h"
 
 #include "haraka.h"
 #include "hash.h"

@@ -1,14 +1,15 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "address.h"
-#include "utils.h"
-#include "params.h"
-#include "hash.h"
 #include "thashx8.h"
+
+#include "address.h"
+#include "hash.h"
+#include "params.h"
 #include "sha2.h"
-#include "sha256x8.h"
 #include "sha256avx.h"
+#include "sha256x8.h"
+#include "utils.h"
 
 #if SPX_SHA512
 #include "sha512x4.h"

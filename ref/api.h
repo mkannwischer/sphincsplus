@@ -11,7 +11,7 @@
 #define CRYPTO_SECRETKEYBYTES SPX_SK_BYTES
 #define CRYPTO_PUBLICKEYBYTES SPX_PK_BYTES
 #define CRYPTO_BYTES SPX_BYTES
-#define CRYPTO_SEEDBYTES 3*SPX_N
+#define CRYPTO_SEEDBYTES (3*SPX_N)
 
 /*
  * Returns the length of a secret key, in bytes

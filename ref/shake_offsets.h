@@ -1,4 +1,4 @@
-#if !defined( SHAKE_OFFSETS_H_ )
+#ifndef SHAKE_OFFSETS_H_
 #define SHAKE_OFFSETS_H_
 
 /*

@@ -1,14 +1,15 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "merkle.h"
+
+#include "address.h"
+#include "params.h"
 #include "utils.h"
 #include "utilsx8.h"
 #include "wots.h"
 #include "wotsx8.h"
 #include "wotsx8.h"
-#include "merkle.h"
-#include "address.h"
-#include "params.h"
 
 /*
  * This generates a Merkle signature (WOTS signature followed by the Merkle

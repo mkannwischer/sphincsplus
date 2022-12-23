@@ -2,9 +2,10 @@
 
 #include "utils.h"
 #include "utilsx8.h"
+
+#include "address.h"
 #include "params.h"
 #include "thashx8.h"
-#include "address.h"
 
 /*
  * Generate the entire Merkle tree, computing the authentication path for leaf_idx,

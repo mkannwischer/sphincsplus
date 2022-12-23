@@ -2,8 +2,9 @@
 #define SPX_UTILSX4_H
 
 #include <stdint.h>
-#include "params.h"
+
 #include "context.h"
+#include "params.h"
 
 /**
  * For a given leaf index, computes the authentication path and the resulting

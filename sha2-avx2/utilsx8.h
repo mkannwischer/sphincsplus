@@ -2,6 +2,7 @@
 #define SPX_UTILSX8_H
 
 #include <stdint.h>
+
 #include "params.h"
 
 /**

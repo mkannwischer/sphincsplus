@@ -1,8 +1,8 @@
 #ifndef SHA256AVX_H
 #define SHA256AVX_H
 
-#include <stdint.h>
 #include <immintrin.h>
+#include <stdint.h>
 
 typedef struct SHA256state {
     __m256i s[8];

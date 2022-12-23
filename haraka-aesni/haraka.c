@@ -1,10 +1,10 @@
 /*
 Plain C implementation of the Haraka256 and Haraka512 permutations.
 */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "haraka.h"
 #include "harakax4.h"

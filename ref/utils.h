@@ -2,8 +2,9 @@
 #define SPX_UTILS_H
 
 #include <stdint.h>
-#include "params.h"
+
 #include "context.h"
+#include "params.h"
 
 
 /* To support MSVC use alloca() instead of VLAs. See #20. */

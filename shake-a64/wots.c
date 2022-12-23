@@ -1,15 +1,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "utils.h"
-#include "utilsx2.h"
-#include "hash.h"
-#include "hashx2.h"
-#include "thashx2.h"
 #include "wots.h"
 #include "wotsx2.h"
+
 #include "address.h"
+#include "hash.h"
+#include "hashx2.h"
 #include "params.h"
+#include "thashx2.h"
+#include "utils.h"
+#include "utilsx2.h"
 
 // TODO clarify address expectations, and make them more uniform.
 // TODO i.e. do we expect types to be set already?

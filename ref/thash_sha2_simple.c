@@ -2,11 +2,12 @@
 #include <string.h>
 
 #include "thash.h"
+
 #include "address.h"
-#include "params.h"
-#include "utils.h"
-#include "sha2.h"
 #include "hash.h"
+#include "params.h"
+#include "sha2.h"
+#include "utils.h"
 
 #if SPX_SHA512
 static void thash_512(unsigned char *out, const unsigned char *in, unsigned int inblocks,

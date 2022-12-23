@@ -1,10 +1,11 @@
 #include <string.h>
 
-#include "utils.h"
 #include "utilsx1.h"
+
+#include "address.h"
 #include "params.h"
 #include "thash.h"
-#include "address.h"
+#include "utils.h"
 
 /*
  * Generate the entire Merkle tree, computing the authentication path for

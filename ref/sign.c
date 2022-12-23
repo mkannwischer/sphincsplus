@@ -1,18 +1,18 @@
 #include <stddef.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
+#include "address.h"
 #include "api.h"
 #include "context.h"
-#include "params.h"
-#include "wots.h"
 #include "fors.h"
 #include "hash.h"
-#include "thash.h"
-#include "address.h"
-#include "randombytes.h"
-#include "utils.h"
 #include "merkle.h"
+#include "params.h"
+#include "randombytes.h"
+#include "thash.h"
+#include "utils.h"
+#include "wots.h"
 
 /*
  * Returns the length of a secret key, in bytes

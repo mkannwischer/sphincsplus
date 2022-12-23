@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "params.h"
 #include "context.h"
+#include "params.h"
 
 /**
  * Takes a WOTS signature and an n-byte message, computes a WOTS public key.

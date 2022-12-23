@@ -1,8 +1,8 @@
 #ifndef SPX_CONTEXT_H
 #define SPX_CONTEXT_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "params.h"
 #ifdef SPX_SHA2

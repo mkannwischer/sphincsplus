@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "params.h"
 #include "immintrin.h"
+#include "params.h"
 
 typedef struct {
     uint8_t pub_seed[SPX_N];

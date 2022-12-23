@@ -1,7 +1,9 @@
 #ifndef SHA512AVX_H
 #define SHA512AVX_H
+
+#include <immintrin.h>
 #include <stdint.h>
-#include "immintrin.h"
+
 
 #include "params.h"
 

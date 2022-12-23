@@ -1,10 +1,11 @@
 #include <string.h>
 
 #include "utils.h"
-#include "params.h"
-#include "hash.h"
-#include "thash.h"
+
 #include "address.h"
+#include "hash.h"
+#include "params.h"
+#include "thash.h"
 
 /**
  * Converts the value of 'in' to 'outlen' bytes in big-endian byte order.

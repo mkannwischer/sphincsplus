@@ -1,13 +1,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "utils.h"
-#include "hash.h"
-#include "thash.h"
 #include "wots.h"
 #include "wotsx1.h"
+
 #include "address.h"
+#include "hash.h"
 #include "params.h"
+#include "thash.h"
+#include "utils.h"
 
 /*
  * This generates a WOTS public key

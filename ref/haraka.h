@@ -2,6 +2,7 @@
 #define SPX_HARAKA_H
 
 #include "context.h"
+#include "params.h"
 
 /* Tweak constants with seed */
 #define tweak_constants SPX_NAMESPACE(tweak_constants)

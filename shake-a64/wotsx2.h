@@ -22,13 +22,13 @@ struct leaf_info_x2 {
 /* run with the same time as it does during the real signing process */
 /* Used only by the benchmark code */
 #define INITIALIZE_LEAF_INFO_X2(info, addr, step_buffer) { \
-    info.wots_sig = 0;             \
-    info.wots_sign_leaf = ~0;      \
-    info.wots_steps = step_buffer; \
+    (info).wots_sig = 0;             \
+    (info).wots_sign_leaf = ~0;      \
+    (info).wots_steps = step_buffer; \
     int i;                         \
     for (i=0; i<2; i++) {          \
-        memcpy( &info.leaf_addr[8*i], addr, 32 ); \
-        memcpy( &info.pk_addr[8*i], addr, 32 ); \
+        memcpy( &(info).leaf_addr[8*i], addr, 32 ); \
+        memcpy( &(info).pk_addr[8*i], addr, 32 ); \
     } \
 }
 

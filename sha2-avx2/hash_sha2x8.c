@@ -1,14 +1,15 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "address.h"
-#include "utils.h"
-#include "params.h"
 #include "hash.h"
 #include "hashx8.h"
+
+#include "address.h"
+#include "params.h"
 #include "sha2.h"
-#include "sha256x8.h"
 #include "sha256avx.h"
+#include "sha256x8.h"
+#include "utils.h"
 
 /*
  * 8-way parallel version of prf_addr; takes 8x as much input and output

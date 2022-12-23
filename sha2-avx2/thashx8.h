@@ -2,6 +2,7 @@
 #define SPX_THASHX8_H
 
 #include <stdint.h>
+
 #include "context.h"
 #include "params.h"
 

@@ -1,15 +1,16 @@
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "thash.h"
 #include "fors.h"
-#include "utils.h"
-#include "utilsx2.h"
+
+#include "address.h"
 #include "hash.h"
 #include "hashx2.h"
+#include "thash.h"
 #include "thashx2.h"
-#include "address.h"
+#include "utils.h"
+#include "utilsx2.h"
 
 static void fors_gen_sk(unsigned char *sk, const spx_ctx *ctx,
                         uint32_t fors_leaf_addr[8])

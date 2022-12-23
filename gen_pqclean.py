@@ -1,53 +1,57 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Set, Literal, List, Iterator, Tuple
 import fileinput
+import logging
+import tempfile
 import re
 import subprocess
-
-import logging
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Iterator, List, Literal, Set, Tuple, cast
 
 # types
 SizeT = Literal[128, 192, 256]
-VariantT = Literal['fast', 'small']
-HashT = Literal['sha2', 'shake', 'haraka']
-ThashT = Literal['simple', 'robust']
+VariantT = Literal["fast", "small"]
+HashT = Literal["sha2", "shake", "haraka"]
+ThashT = Literal["simple", "robust"]
 
-ImplementationLiteralT = Literal['ref'] | Literal['avx2'] | Literal['aesni'] | Literal['a64']
+ImplementationLiteralT = (
+    Literal["ref"] | Literal["avx2"] | Literal["aesni"] | Literal["a64"]
+)
 
-BUILD_ENABLED = False
+BUILD_ENABLED = True
 
 
 def exclude_file(file: Path) -> bool:
     filename: str = str(file.name)
-    if 'PQCgenKAT' in filename:
+    if "PQCgenKAT" in filename:
         return True
     if file.is_dir():
         return True
     if filename == "params.h":
         return True
-    if filename.startswith('rng') or filename.startswith("randombytes"):
+    if filename.startswith("rng") or filename.startswith("randombytes"):
         return True
-    if filename.startswith('.git'):
+    if filename.startswith(".git"):
         return True
     if filename.startswith("fips202.") or filename.startswith("sha2."):
         return True
-    if filename == 'Makefile':
+    if filename == "Makefile":
         return True
-    if filename == 'api.h':
+    if filename == "api.h":
         return True
 
     return False
 
 
-def get_pqclean_impl_name(impl: ImplementationLiteralT) -> Literal['clean'] | Literal['aarch64'] | Literal['aesni'] | Literal['avx2']:
+def get_pqclean_impl_name(
+    impl: ImplementationLiteralT,
+) -> Literal["clean"] | Literal["aarch64"] | Literal["aesni"] | Literal["avx2"]:
     match impl:
-        case 'ref':
-            return 'clean'
-        case 'a64':
-            return 'aarch64'
+        case "ref":
+            return "clean"
+        case "a64":
+            return "aarch64"
         case _:
             return impl
 
@@ -55,11 +59,13 @@ def get_pqclean_impl_name(impl: ImplementationLiteralT) -> Literal['clean'] | Li
 def replace_in_file(path: Path, text_to_search: str, replacement_text: str) -> None:
     with fileinput.FileInput(path, inplace=True) as file:
         for line in file:
-            print(re.sub(text_to_search, replacement_text, line), end='')
+            print(re.sub(text_to_search, replacement_text, line), end="")
+
 
 @dataclass
 class Sphincs:
     """A SPHINCS+ instantiation"""
+
     size: SizeT
     variant: VariantT
     hash: HashT
@@ -77,7 +83,7 @@ class Sphincs:
                 level = 3
             case 256:
                 level = 5
-        if self.hash == 'haraka':
+        if self.hash == "haraka":
             if level > 2:
                 level = 2
 
@@ -89,13 +95,13 @@ class Sphincs:
 
     @property
     def h(self) -> int:
-        if self.size in (128,  192):
-            if self.variant == 'small':
+        if self.size in (128, 192):
+            if self.variant == "small":
                 return 63
             else:
                 return 66
         else:
-            if self.variant == 'small':
+            if self.variant == "small":
                 return 64
             else:
                 return 68
@@ -105,37 +111,39 @@ class Sphincs:
         match self.size:
             case 128:
                 match self.variant:
-                    case 'small':
+                    case "small":
                         return 12
-                    case 'fast':
+                    case "fast":
                         return 6
             case 192:
                 match self.variant:
-                    case 'small':
+                    case "small":
                         return 14
-                    case 'fast':
+                    case "fast":
                         return 8
             case 256:
                 match self.variant:
-                    case 'small':
+                    case "small":
                         return 14
-                    case 'fast':
+                    case "fast":
                         return 9
 
     @property
     def k(self) -> int:
-        if self.size in (128, 192) and self.variant == 'fast':
+        if self.size in (128, 192) and self.variant == "fast":
             return 33
-        elif self.size == 128 and self.variant == 'small':
+        elif self.size == 128 and self.variant == "small":
             return 14
-        elif self.size == 192 and self.variant == 'small':
+        elif self.size == 192 and self.variant == "small":
             return 17
-        elif self.size == 256 and self.variant == 'small':
+        elif self.size == 256 and self.variant == "small":
             return 22
-        elif self.variant == 256 and self.variant == 'fast':
+        elif self.variant == 256 and self.variant == "fast":
             return 35
 
-        raise ValueError(f"Unexpected combination of size {self.size} and variant {self.variant}")
+        raise ValueError(
+            f"Unexpected combination of size {self.size} and variant {self.variant}"
+        )
 
     @property
     def w(self) -> int:
@@ -143,13 +151,13 @@ class Sphincs:
 
     @property
     def bits_security(self) -> int:
-        if self.size == 128 and self.variant == 'small':
+        if self.size == 128 and self.variant == "small":
             return 133
-        elif self.size == 128 and self.variant == 'fast':
+        elif self.size == 128 and self.variant == "fast":
             return 128
-        elif self.size == 192 and self.variant == 'small':
+        elif self.size == 192 and self.variant == "small":
             return 193
-        elif self.size == 192 and self.variant == 'fast':
+        elif self.size == 192 and self.variant == "fast":
             return 194
         elif self.size == 256:
             return 255
@@ -174,17 +182,17 @@ class Sphincs:
     def sig_bytes(self) -> int:
         ident = str(self.size) + self.variant[0]
         match ident:
-            case '128s':
+            case "128s":
                 return 7856
-            case '128f':
+            case "128f":
                 return 17088
-            case '192s':
+            case "192s":
                 return 16224
-            case '192f':
+            case "192f":
                 return 35664
-            case '256s':
+            case "256s":
                 return 29792
-            case '256f':
+            case "256f":
                 return 49856
         raise ValueError(f"Unexpected identity {ident}")
 
@@ -203,12 +211,12 @@ class Sphincs:
     @property
     def implementations(self) -> List[ImplementationLiteralT]:
         match self.hash:
-            case 'sha2':
-                return ['ref', 'avx2']
-            case 'shake':
-                return ['ref', 'avx2', 'a64']
-            case 'haraka':
-                return ['ref', 'aesni']
+            case "sha2":
+                return ["ref", "avx2"]
+            case "shake":
+                return ["ref", "avx2", "a64"]
+            case "haraka":
+                return ["ref", "aesni"]
 
     @property
     def nist_kat_hash(self) -> str:
@@ -219,67 +227,76 @@ class Sphincs:
                     return hash_
         assert False, f"Didn't find hash for {self.basefile}"
 
-    def get_source_files(self, impl: ImplementationLiteralT) -> Iterator[Tuple[Path, str]]:
+    def get_source_files(
+        self, impl: ImplementationLiteralT
+    ) -> Iterator[Tuple[Path, str]]:
         self.log.info("Generating filenames for %s impl %s", self.name, impl)
         match impl:
-            case 'ref':
-                implpath = Path('ref')
-            case 'avx2':
+            case "ref":
+                implpath = Path("ref")
+            case "avx2":
                 assert self.hash != "haraka"
                 implpath = Path(f"{self.hash}-avx2")
-            case 'a64':
-                assert self.hash == 'shake'
+            case "a64":
+                assert self.hash == "shake"
                 implpath = Path("shake-a64")
-            case 'aesni':
-                assert self.hash == 'haraka'
-                implpath = Path('haraka-aesni')
+            case "aesni":
+                assert self.hash == "haraka"
+                implpath = Path("haraka-aesni")
 
         # We definitely need api.h and the LICENSE
-        yield (implpath / 'api.h', 'nistapi.h')
-        yield (Path('LICENSE'), 'LICENSE')
+        yield (implpath / "api.h", "nistapi.h")
+        yield (Path("LICENSE"), "LICENSE")
 
         # resolve params.h
-        yield (implpath / 'params' / f"params-sphincs-{self.hash}-{self.size}{self.variant[0]}.h", 'params.h')
+        yield (
+            implpath
+            / "params"
+            / f"params-sphincs-{self.hash}-{self.size}{self.variant[0]}.h",
+            "params.h",
+        )
 
-        other_hashes = {'haraka', 'shake', 'sha2'}
+        other_hashes = {"haraka", "shake", "sha2"}
         other_hashes.remove(self.hash)
 
-        for file in implpath.glob('*'):
+        for file in implpath.glob("*"):
             if exclude_file(file):
                 self.log.debug("Excluding %s", file.name)
                 continue
-            elif impl == 'ref':
+            elif impl == "ref":
                 found_hash = False
                 for hash in other_hashes:
                     if hash in file.name:
-                        self.log.debug("Excluding %s based on hash %s", file.name, file.name)
+                        self.log.debug(
+                            "Excluding %s based on hash %s", file.name, file.name
+                        )
                         found_hash = True
                         break
                 if found_hash:
                     continue
             if params.hash == "sha2" and params.size == 128:
-                if 'sha512' in file.name:
+                if "sha512" in file.name:
                     self.log.debug("Omitting %s", file.name)
-            elif file.name.startswith('thash_'):
+                    continue
+            elif file.name.startswith("thash_"):
                 if not self.thash in file.name:
                     self.log.debug("Skipping thash file %s", file.name)
                     continue
             yield (file, file.name)
 
 
-
 SPHINCSES: List[Sphincs] = [
     Sphincs(size, variant, hash_, thash)
     for size in (128, 192, 256)
-    for variant in ('small', 'fast')
-    for hash_ in ('sha2', 'shake', 'haraka')
-    for thash in ('simple', 'robust')
+    for variant in ("small", "fast")
+    for hash_ in ("sha2", "shake", "haraka")
+    for thash in ("simple", "robust")
 ]
 
 
 def gen_api_h(params: Sphincs, impl: ImplementationLiteralT) -> str:
     ns = params.ns_name(impl)
-    return (f"""\
+    return f"""\
 #ifndef {ns}_API_H
 #define {ns}_API_H
 
@@ -357,11 +374,11 @@ int {ns}_crypto_sign_open(uint8_t *m, size_t *mlen,
                           const uint8_t *sm, size_t smlen,
                           const uint8_t *pk);
 #endif
-""")
+"""
 
 
 def pqclean_metadata(params: Sphincs) -> str:
-    output = (f"""\
+    output = f"""\
 name: {params.name}
 type: signature
 claimed-nist-level: {params.nist_level}
@@ -391,7 +408,7 @@ auxiliary-submitters:
   - Peter Schwabe
   - Bas Westerbaan
 implementations:
-""")
+"""
     for impl in params.implementations:
         output += implementation_metadata(impl)
 
@@ -399,23 +416,25 @@ implementations:
 
 
 def implementation_metadata(impl):
-    gitout = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
+    gitout = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, text=True
+    )
     commit = gitout.stdout.strip()
-    if impl == 'ref':
+    if impl == "ref":
         return f"""\
   - name: clean
     version: https://github.com/sphincs/sphincsplus/commit/{commit}
 """
-    if impl == 'avx2':
-        arch = 'x86_64'
-        flags = ['avx2']
-    elif impl == 'aesni':
-        arch = 'x86_64'
-        flags = ['aes']
-    elif impl == 'a64':
-        impl = 'aarch64'
-        arch = 'aarch64'
-        flags = ['asimd']
+    if impl == "avx2":
+        arch = "x86_64"
+        flags = ["avx2"]
+    elif impl == "aesni":
+        arch = "x86_64"
+        flags = ["aes"]
+    elif impl == "a64":
+        impl = "aarch64"
+        arch = "aarch64"
+        flags = ["asimd"]
     else:
         assert False
 
@@ -427,13 +446,22 @@ def implementation_metadata(impl):
           required_flags: {flags!r}
 """
 
+
 def test_api_h(params: Sphincs):
     subprocess.run(
-            ["make", "-B", "-C", "metadata", "test_api_h",
+        [
+            "make",
+            "-B",
+            "-C",
+            "metadata",
+            "test_api_h",
             f"NS={params.ns_name('ref')}",
             f"THASH={params.thash}",
-            f"PARAMS=sphincs-{params.hash}-{params.size}{params.variant[0]}"],
-            check=True, capture_output=True)
+            f"PARAMS=sphincs-{params.hash}-{params.size}{params.variant[0]}",
+        ],
+        check=True,
+        capture_output=True,
+    )
     subprocess.run(["./metadata/test_api_h"], check=True)
 
 
@@ -442,30 +470,30 @@ def test_build(implpath) -> None:
         return
     if implpath.name == "aarch64":
         return
-    subprocess.run(
-        ["make", "-j4", "-C", implpath],
-        check=True, capture_output=False)
-    subprocess.run(
-        ["make", "-C", implpath, "clean"],
-        check=True, capture_output=False)
+    subprocess.run(["make", "-j4", "-C", implpath], check=True, capture_output=False)
+    subprocess.run(["make", "-C", implpath, "clean"], check=True, capture_output=False)
 
 
 def gen_makefile(params: Sphincs, export_path: Path) -> None:
     c_files = list(export_path.glob("*.[cs]"))
     h_files = [fn.name for fn in export_path.glob("*.h")]
-    o_files = [fn.with_suffix('.o').name for fn in c_files]
-    obj_files = [fn.with_suffix('.obj').name for fn in c_files]
+    o_files = [fn.with_suffix(".o").name for fn in c_files]
+    obj_files = [fn.with_suffix(".obj").name for fn in c_files]
 
     cflags: Set[str] = {
-        "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Werror",
-        "-Wmissing-prototypes", "-Wredundant-decls",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Werror",
+        "-Wmissing-prototypes",
+        "-Wredundant-decls",
     }
 
     if export_path.name == "aesni":
         cflags.add("-maes")
     if export_path.name == "avx2":
         cflags.add("-mavx2")
-
 
     makefile = f"""\
 # This Makefile can be used with GNU Make or BSD Make
@@ -483,7 +511,7 @@ all: $(LIB)
 \t$(CC) $(CFLAGS) -c -o $@ $<
 
 """
-    if any(map(lambda x: x.suffix == '.s', c_files)):
+    if any(map(lambda x: x.suffix == ".s", c_files)):
         makefile += """\
 
 %.o: %.s
@@ -505,10 +533,9 @@ $(KECCAK4X):
         keccaklib = "$(KECCAK4X)"
         keccakclean = "\t$(MAKE) -C $(KECCAK4XDIR) clean\n"
 
-
     makefile += f"""\
 $(LIB): $(OBJECTS) {keccaklib}
-\t$(AR) -r $@ $(OBJECTS)
+\t$(AR) -r $@ $(OBJECTS) {keccaklib}
 
 clean:
 \t$(RM) $(OBJECTS)
@@ -528,16 +555,19 @@ clean:
     keccakdel = ""
     if export_path.name in ("avx2", "aesni"):
         archflag = "/arch:AVX "
-        keccak = (rf"""\
+        keccak = (
+            rf"""\
 
 KECCAK4XDIR=..\..\..\common\keccak4x
 KECCAK4XOBJ=KeccakP-1600-times4-SIMD256.obj
-KECCAK4X=$(KECCAK4XDIR)\$(KECCAK4XOBJ)""""""
+KECCAK4X=$(KECCAK4XDIR)\$(KECCAK4XOBJ)"""
+            """
 
 $(KECCAK4X):
 \tcd $(KECCAK4XDIR) && $(MAKE) /f Makefile.Microsoft_nmake $(KECCAK4XOBJ)
 
-""")
+"""
+        )
         keccakdel = "\t-DEL $(KECCAK4X)\n"
 
     makefile = f"""\
@@ -565,19 +595,89 @@ clean:
     with (export_path / "Makefile.Microsoft_nmake").open("w") as fh:
         fh.write(makefile)
 
+
+def unifdef(params: Sphincs, implpath: Path):
+    paramfile = (
+        Path("ref")
+        / "params"
+        / f"params-sphincs-{params.hash}-{params.size}{params.variant[0]}.h"
+    )
+    with tempfile.TemporaryDirectory() as tempdir:
+        temppar = Path(tempdir) / "tempparams.h"
+        editpar = Path(tempdir) / "editparams.h"
+        with paramfile.open("r") as rh:
+            lines = rh.readlines()
+        with temppar.open("w") as wh:
+            wh.writelines(lines[2:23])
+        with editpar.open("w") as wh:
+            wh.writelines(lines[2:-1])
+
+        subprocess.run(["unifdef", f"-f{temppar}", "-k", "-m", editpar])
+        replace_in_file(editpar, "#if.*$", "")
+        replace_in_file(editpar, "#error.*$", "")
+        replace_in_file(editpar, "#endif.*$", "")
+        replace_in_file(editpar, "#include.*$", "")
+        replace_in_file(editpar, "\\\\\n", "")
+
+        undef_hashes = ["sha2", "haraka", "shake"]
+        undef_hashes.remove(params.hash)
+
+        subprocess.run(
+            [
+                "unifdef",
+                "-mk",
+                "-x2",
+                "-U_MSC_VER",
+                f"-DSPX_{params.hash.upper()}",
+                *[f"-USPX_{hsh.upper()}" for hsh in undef_hashes],
+                f"-f{editpar}",
+                *list(implpath.glob("*.[ch]")),
+            ],
+            check=True,
+        )
+
+
+def astyle(implpath: Path):
+    subprocess.run(
+        ["astyle", "--options=pqclean-export/.astylerc", *list(implpath.glob("*.[ch]"))]
+    )
+
+
+def clang_tidy(implpath: Path, check=False):
+    subprocess.run(
+        [
+            "clang-tidy",  #'-quiet',
+            "--config-file=pqclean-export/.clang-tidy",
+            "-header-filter=.*",
+            "--fix",
+            "--fix-errors",
+            "--fix-notes",
+            *list(implpath.glob("*.c")),
+            *list(Path("pqclean-export/common").glob("*.c")),
+            "--",
+            "-iquote",
+            "pqclean-export/test/common",
+            "-iquote",
+            "pqclean-export/common",
+            "-iquote",
+            implpath,
+        ],
+        check=check,
+    )
+
+
 if __name__ == "__main__":
-    import shutil
-    import tempfile
     import hashlib
+    import shutil
 
     logging.basicConfig(level=logging.DEBUG)
 
     for params in SPHINCSES:
-        apipath = Path('metadata/api') / (params.basefile + '.h')
-        metapath = Path('metadata/meta') / (params.basefile + '.yml')
-        with open(apipath, 'w') as fh:
-            fh.write(gen_api_h(params, 'ref'))
-        with open(metapath, 'w') as fh:
+        apipath = Path("metadata/api") / (params.basefile + ".h")
+        metapath = Path("metadata/meta") / (params.basefile + ".yml")
+        with open(apipath, "w") as fh:
+            fh.write(gen_api_h(params, "ref"))
+        with open(metapath, "w") as fh:
             fh.write(pqclean_metadata(params))
         test_api_h(params)
 
@@ -606,31 +706,63 @@ if __name__ == "__main__":
             for (srcfile, destfn) in params.get_source_files(impl):
                 logging.debug("Copying %s to %s", srcfile, destfn)
                 shutil.copyfile(srcfile, implpath / destfn, follow_symlinks=True)
+                replace_in_file(implpath / destfn, "SPX_VLA", "PQCLEAN_VLA")
 
-            replace_in_file(implpath / "params.h", r"^#include \"\.\./", "#include \"")
-            replace_in_file(implpath / "params.h", "SPX_##s", f"{params.ns_name(impl)}_##s")
-            replace_in_file(implpath / "sign.c", r"#include \"api\.h\"", "#include \"nistapi.h\"")
+            replace_in_file(implpath / "params.h", r"^#include \"\.\./", '#include "')
+            replace_in_file(
+                implpath / "params.h", "SPX_##s", f"{params.ns_name(impl)}_##s"
+            )
+            replace_in_file(
+                implpath / "sign.c", r"#include \"api\.h\"", '#include "nistapi.h"'
+            )
 
             gen_makefile(params, implpath)
             test_build(implpath)
+            unifdef(params, implpath)
+            replace_in_file(implpath / "utils.h", "# define SPX_VLA.*", "")
+            replace_in_file(
+                implpath / "utils.h",
+                '#include "context.h"',
+                '#include "compat.h"\n#include "context.h"',
+            )
+            clang_tidy(implpath)
+            clang_tidy(implpath, check=True)
+            astyle(implpath)
 
     for params in SPHINCSES:
-        sourcepath = destpath / params.basefile / "clean"
+        impl = get_pqclean_impl_name(
+            cast(
+                Literal["aesni", "avx2"],
+                [impl for impl in params.implementations if impl not in ("ref", "a64")][
+                    0
+                ],
+            )
+        )
+        sourcepath = destpath / params.basefile / impl
 
         subprocess.run(["make", "-C", sourcepath], check=True)
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run(
-                ["make", "-C", "pqclean-export/test", "testvectors",
-                 "TYPE=sign",
-                 f"SCHEME={params.basefile}",
-                 f"SCHEME_DIR={sourcepath.resolve()}",
-                 f"IMPLEMENTATION=clean",
-                 f"DEST_DIR={tmpdir}"],
-                check=True)
+                [
+                    "make",
+                    "-C",
+                    "pqclean-export/test",
+                    "testvectors",
+                    "TYPE=sign",
+                    f"SCHEME={params.basefile}",
+                    f"SCHEME_DIR={sourcepath.resolve()}",
+                    f"IMPLEMENTATION={impl}",
+                    f"DEST_DIR={tmpdir}",
+                ],
+                check=True,
+            )
             out = subprocess.run(
-                    [f"{tmpdir}/testvectors_{params.basefile}_clean"],
-                    capture_output=True,
-                    check=True)
-        output = out.stdout.replace(b'\r', b'')
+                [f"{tmpdir}/testvectors_{params.basefile}_{impl}"],
+                capture_output=True,
+                check=True,
+            )
+        output = out.stdout.replace(b"\r", b"")
         vector = hashlib.sha256(output).hexdigest().lower()
-        replace_in_file(destpath / params.basefile / "META.yml", "testvectorvalue", vector)
+        replace_in_file(
+            destpath / params.basefile / "META.yml", "testvectorvalue", vector
+        )

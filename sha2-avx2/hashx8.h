@@ -2,6 +2,7 @@
 #define SPX_HASHX8_H
 
 #include <stdint.h>
+
 #include "params.h"
 
 #define prf_addrx8 SPX_NAMESPACE(prf_addrx8)

@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "address.h"
-#include "utils.h"
-#include "params.h"
 #include "hash.h"
+
+#include "address.h"
 #include "fips202.h"
+#include "params.h"
+#include "utils.h"
 
 /*
  * Computes PRF(pk_seed, sk_seed, addr)

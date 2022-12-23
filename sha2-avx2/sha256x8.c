@@ -1,7 +1,7 @@
 #include <string.h>
 
-#include "sha256x8.h"
 #include "sha256avx.h"
+#include "sha256x8.h"
 #include "utils.h"
 
 // Performs sha256x8 on an initialized (and perhaps seeded) state.

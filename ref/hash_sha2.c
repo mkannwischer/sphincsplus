@@ -2,10 +2,10 @@
 #include <string.h>
 
 #include "address.h"
-#include "utils.h"
-#include "params.h"
 #include "hash.h"
+#include "params.h"
 #include "sha2.h"
+#include "utils.h"
 
 #if SPX_SHA256_OUTPUT_BYTES < SPX_N
     #error Linking against SHA-256 with N larger than 32 bytes is not supported

@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "params.h"
 #include "context.h"
+#include "params.h"
 
 /**
  * Signs a message m, deriving the secret key from sk_seed and the FTS address.

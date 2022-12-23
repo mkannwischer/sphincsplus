@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "address.h"
-#include "params.h"
-#include "fips202x2.h"
-#include "f1600x2.h"
 #include "hashx2.h"
+
+#include "address.h"
+#include "f1600x2.h"
+#include "fips202x2.h"
+#include "params.h"
 
 /*
  * 2-way parallel version of prf_addr; takes 2x as much input and output

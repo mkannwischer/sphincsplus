@@ -10,16 +10,19 @@
 #include "sha512x4.h"
 #endif
 
+// funky ordering due to optimal padding
 typedef struct {
-    uint8_t pub_seed[SPX_N];
-    uint8_t sk_seed[SPX_N];
-
-    sha256ctx state_seeded;
     sha256x8ctx statex8_seeded;
 #if SPX_SHA512
-    sha512ctx state_seeded_512;
     sha512x4ctx statex4_seeded_512;
 #endif
+    sha256ctx state_seeded;
+#if SPX_SHA512
+    sha512ctx state_seeded_512;
+#endif
+
+    uint8_t pub_seed[SPX_N];
+    uint8_t sk_seed[SPX_N];
 } spx_ctx;
 
 

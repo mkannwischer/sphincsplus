@@ -1,4 +1,4 @@
-#if !defined( HARAKA_OFFSETS_H_ )
+#ifndef HARAKA_OFFSETS_H_
 #define HARAKA_OFFSETS_H_
 
 /*
