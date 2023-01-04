@@ -1,4 +1,4 @@
-#if !defined( WOTSX4_H_ )
+#ifndef WOTSX4_H_
 #define WOTSX4_H_
 
 #include <string.h>

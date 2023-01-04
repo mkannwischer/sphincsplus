@@ -1,5 +1,5 @@
-#if !defined( WOTSX2_H_ )
-#define WOTSX2_H_ 
+#ifndef WOTSX2_H_
+#define WOTSX2_H_
 
 #include <string.h>
 #include "params.h"

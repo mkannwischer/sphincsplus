@@ -62,6 +62,22 @@ def replace_in_file(path: Path, text_to_search: str, replacement_text: str) -> N
             print(re.sub(text_to_search, replacement_text, line), end="")
 
 
+def remove_stupid_ifdef(path: Path, ifdef: str):
+    if not path.exists():
+        return
+    suppress = False
+    with fileinput.FileInput(path, inplace=True) as file:
+        for line in file:
+            if line.strip() == ifdef:
+                suppress = True
+            if not suppress:
+                print(line, end="")
+            else:
+                print(f"//{line}", end="")
+            if line.strip() == "#endif":
+                suppress = False
+
+
 @dataclass
 class Sphincs:
     """A SPHINCS+ instantiation"""
@@ -438,13 +454,20 @@ def implementation_metadata(impl):
     else:
         assert False
 
-    return f"""\
+    data = f"""\
   - name: {impl}
     version: https://github.com/sphincs/sphincsplus/commit/{commit}
     supported_platforms:
         - architecture: {arch}
           required_flags: {flags!r}
 """
+    if impl == "a64":
+        data += """\
+          operating_systems:
+            - Linux
+            - Darwin
+"""
+    return data
 
 
 def test_api_h(params: Sphincs):
@@ -625,15 +648,57 @@ def unifdef(params: Sphincs, implpath: Path):
         subprocess.run(
             [
                 "unifdef",
-                "-mk",
+                "-m",
+                "-k",
                 "-x2",
                 "-U_MSC_VER",
+                f"-DSPX_SHA512={'0' if params.size == 128 else '1'}",
                 f"-DSPX_{params.hash.upper()}",
                 *[f"-USPX_{hsh.upper()}" for hsh in undef_hashes],
                 f"-f{editpar}",
                 *list(implpath.glob("*.[ch]")),
             ],
             check=True,
+        )
+        output = subprocess.run(["coan", "defs", editpar], capture_output=True, text=True)
+        defsfile = Path("/tmp") / "defs.h"
+        defines = {}
+        for line in output.stdout.split('\n'):
+            if "SPX_NAMESPACE" in line or line.strip() == '':
+                continue
+            print(f"Splitting {line}")
+            (name, value) = line.replace("#define ", "").split(" ", 1)
+            defines[name] = value
+
+        for _ in range(10):
+            for name, value in defines.copy().items():
+                if "SPX_" not in value:
+                    continue
+                for name2, value2 in defines.copy().items():
+                    print(f"Trying to replace {name2} in {defines[name]}")
+                    defines[name] = defines[name].replace(name2, value2)
+
+        for name in defines.keys():
+            print(f"Evaluating '{name}={defines[name]}'")
+            defines[name] = eval(defines[name].replace("/", "//"))
+
+        with defsfile.open("w") as fh:
+            for name, value in defines.items():
+                fh.write(f"-D{name}={value} ")
+        sourcefiles = [file for file in implpath.glob("*.[ch]") if file.name != "params.h"]
+
+        subprocess.run(
+            [
+                "coan",
+                "source",
+                "-f", defsfile,
+                "-E",
+                "--no-transients",
+                "-r",
+                "-kd",
+                *sourcefiles
+            ],
+            check=False,
         )
 
 
