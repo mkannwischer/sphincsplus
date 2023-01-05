@@ -625,6 +625,9 @@ def unifdef(params: Sphincs, implpath: Path):
         / "params"
         / f"params-sphincs-{params.hash}-{params.size}{params.variant[0]}.h"
     )
+    hash_offsets = (
+        Path("ref") / f"{params.hash}_offsets.h"
+    )
     with tempfile.TemporaryDirectory() as tempdir:
         temppar = Path(tempdir) / "tempparams.h"
         editpar = Path(tempdir) / "editparams.h"
@@ -661,13 +664,18 @@ def unifdef(params: Sphincs, implpath: Path):
             check=True,
         )
         output = subprocess.run(["coan", "defs", editpar], capture_output=True, text=True)
-        defsfile = Path("/tmp") / "defs.h"
+        output2 = subprocess.run(["coan", "defs", hash_offsets], capture_output=True, text=True)
+        defsfile = Path(tempdir) / "defs.h"
+
         defines = {}
-        for line in output.stdout.split('\n'):
-            if "SPX_NAMESPACE" in line or line.strip() == '':
+        for line in (output.stdout + output2.stdout).split('\n'):
+            if "SPX_NAMESPACE" in line or '#define' not in line:
+                continue
+            line = line.replace("#define ", "")
+            if ' ' not in line:
                 continue
             print(f"Splitting {line}")
-            (name, value) = line.replace("#define ", "").split(" ", 1)
+            (name, value) = line.split(" ", 1)
             defines[name] = value
 
         for _ in range(10):
@@ -685,7 +693,7 @@ def unifdef(params: Sphincs, implpath: Path):
         with defsfile.open("w") as fh:
             for name, value in defines.items():
                 fh.write(f"-D{name}={value} ")
-        sourcefiles = [file for file in implpath.glob("*.[ch]") if file.name != "params.h"]
+        sourcefiles = [file for file in implpath.glob("*.[ch]") if file.name != "params.h" and "_offsets.h" not in file.name]
 
         subprocess.run(
             [
@@ -693,7 +701,6 @@ def unifdef(params: Sphincs, implpath: Path):
                 "source",
                 "-f", defsfile,
                 "-E",
-                "--no-transients",
                 "-r",
                 "-kd",
                 *sourcefiles
@@ -790,6 +797,7 @@ if __name__ == "__main__":
                 '#include "context.h"',
                 '#include "compat.h"\n#include "context.h"',
             )
+            remove_stupid_ifdef(implpath / "params.h", "#if SPX_TREE_HEIGHT * SPX_D != SPX_FULL_HEIGHT")
             clang_tidy(implpath)
             clang_tidy(implpath, check=True)
             astyle(implpath)
