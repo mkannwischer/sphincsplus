@@ -5,6 +5,8 @@ import logging
 import tempfile
 import re
 import subprocess
+import functools
+import io
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterator, List, Literal, Set, Tuple, cast
@@ -89,6 +91,9 @@ class Sphincs:
 
     def __post_init__(self):
         self.log = logging.getLogger(__class__.__name__)
+
+    def __hash__(self):
+        return hash((self.size, self.variant, self.hash, self.thash))
 
     @property
     def nist_level(self) -> Literal[1, 2, 3, 5]:
@@ -212,6 +217,20 @@ class Sphincs:
                 return 49856
         raise ValueError(f"Unexpected identity {ident}")
 
+    @functools.lru_cache
+    def get_nistkat(self) -> str:
+        katfiles = list((Path("KAT") /self.basefile).glob("PQCsignKAT_*.rsp"))
+        if len(katfiles) == 0:
+            raise ValueError(f"No KAT file found for {self}. Did you run ./vectors.py?")
+        katfile = katfiles[0]
+        with katfile.open("rb") as katfh:
+            kat = katfh.readlines()
+            buf = io.BytesIO()
+            buf.writelines(kat[2:10])
+            sha = hashlib.sha256()
+            sha.update(buf.getvalue())
+            return sha.hexdigest()
+
     @property
     def name(self) -> str:
         return f"SPHINCS+-{self.hash}-{self.size}{self.variant[0]}-{self.thash}"
@@ -233,15 +252,6 @@ class Sphincs:
                 return ["ref", "avx2", "a64"]
             case "haraka":
                 return ["ref", "aesni"]
-
-    @property
-    def nist_kat_hash(self) -> str:
-        with open("SHA256SUMS", "r") as fh:
-            for line in fh.readlines():
-                hash_, alg = line.strip().split(" ")
-                if alg == self.basefile:
-                    return hash_
-        assert False, f"Didn't find hash for {self.basefile}"
 
     def get_source_files(
         self, impl: ImplementationLiteralT
@@ -279,7 +289,7 @@ class Sphincs:
             if exclude_file(file):
                 self.log.debug("Excluding %s", file.name)
                 continue
-            elif impl == "ref":
+            if impl == "ref":
                 found_hash = False
                 for hash in other_hashes:
                     if hash in file.name:
@@ -290,24 +300,16 @@ class Sphincs:
                         break
                 if found_hash:
                     continue
-            if params.hash == "sha2" and params.size == 128:
+            if self.hash == "sha2" and self.size == 128:
                 if "sha512" in file.name:
                     self.log.debug("Omitting %s", file.name)
                     continue
-            elif file.name.startswith("thash_"):
+            if file.name.startswith("thash_"):
                 if not self.thash in file.name:
                     self.log.debug("Skipping thash file %s", file.name)
                     continue
             yield (file, file.name)
 
-
-SPHINCSES: List[Sphincs] = [
-    Sphincs(size, variant, hash_, thash)
-    for size in (128, 192, 256)
-    for variant in ("small", "fast")
-    for hash_ in ("sha2", "shake", "haraka")
-    for thash in ("simple", "robust")
-]
 
 
 def gen_api_h(params: Sphincs, impl: ImplementationLiteralT) -> str:
@@ -402,7 +404,7 @@ length-public-key: {params.pk_bytes}
 length-secret-key: {params.sk_bytes}
 length-signature: {params.sig_bytes}
 testvectors-sha256: testvectorvalue
-nistkat-sha256: {params.nist_kat_hash}
+nistkat-sha256: {params.get_nistkat()}
 principal-submitters:
   - Andreas Hülsing
 auxiliary-submitters:
@@ -431,7 +433,7 @@ implementations:
     return output
 
 
-def implementation_metadata(impl):
+def implementation_metadata(impl: Literal['avx2', 'aesni', 'a64']):
     gitout = subprocess.run(
         ["git", "rev-parse", "HEAD"], capture_output=True, text=True
     )
@@ -441,6 +443,7 @@ def implementation_metadata(impl):
   - name: clean
     version: https://github.com/sphincs/sphincsplus/commit/{commit}
 """
+    print_impl = impl
     if impl == "avx2":
         arch = "x86_64"
         flags = ["avx2"]
@@ -448,24 +451,24 @@ def implementation_metadata(impl):
         arch = "x86_64"
         flags = ["aes"]
     elif impl == "a64":
-        impl = "aarch64"
+        print_impl = "aarch64"
         arch = "aarch64"
         flags = ["asimd"]
     else:
         assert False
 
     data = f"""\
-  - name: {impl}
+  - name: {print_impl}
     version: https://github.com/sphincs/sphincsplus/commit/{commit}
     supported_platforms:
-        - architecture: {arch}
-          required_flags: {flags!r}
+      - architecture: {print_impl}
+        required_flags: {flags!r}
 """
     if impl == "a64":
         data += """\
-          operating_systems:
-            - Linux
-            - Darwin
+        operating_systems:
+          - Linux
+          - Darwin
 """
     return data
 
@@ -714,6 +717,44 @@ def astyle(implpath: Path):
         ["astyle", "--options=pqclean-export/.astylerc", *list(implpath.glob("*.[ch]"))]
     )
 
+def set_testvectors(destpath: Path, params: Sphincs):
+    impl = get_pqclean_impl_name(
+        cast(
+            Literal["aesni", "avx2"],
+            [impl for impl in params.implementations
+             if impl not in ("ref", "a64")][0]
+        )
+    )
+    sourcepath = destpath / params.basefile / impl
+
+    subprocess.run(["make", "-C", sourcepath], check=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        subprocess.run(
+            [
+                "make",
+                "-C",
+                "pqclean-export/test",
+                "testvectors",
+                "TYPE=sign",
+                f"SCHEME={params.basefile}",
+                f"SCHEME_DIR={sourcepath.resolve()}",
+                f"IMPLEMENTATION={impl}",
+                f"DEST_DIR={tmpdir}",
+            ],
+            check=True,
+        )
+        testvector_out = subprocess.run(
+            [f"{tmpdir}/testvectors_{params.basefile}_{impl}"],
+            capture_output=True,
+            check=True,
+        )
+
+    output = testvector_out.stdout.replace(b"\r", b"")
+    vector = hashlib.sha256(output).hexdigest().lower()
+    replace_in_file(
+        destpath / params.basefile / "META.yml", "testvectorvalue", vector
+    )
+
 
 def clang_tidy(implpath: Path, check=False):
     subprocess.run(
@@ -738,13 +779,87 @@ def clang_tidy(implpath: Path, check=False):
     )
 
 
+
+def generate_impl(destpath: Path, params: Sphincs):
+    sphincspath = destpath / params.basefile
+    sphincspath.mkdir()
+
+    logging.info("Generating metadata")
+    with (sphincspath / "META.yml").open("w") as fh:
+        fh.write(pqclean_metadata(params))
+
+    logging.info("Copying files")
+    for impl in params.implementations:
+        implpath = sphincspath / get_pqclean_impl_name(impl)
+        implpath.mkdir()
+
+        with (implpath / "api.h").open("w") as fh:
+            fh.write(gen_api_h(params, impl))
+
+        for (srcfile, destfn) in params.get_source_files(impl):
+            logging.debug("Copying %s to %s", srcfile, destfn)
+            shutil.copyfile(srcfile, implpath / destfn, follow_symlinks=True)
+            replace_in_file(implpath / destfn, "SPX_VLA", "PQCLEAN_VLA")
+
+        replace_in_file(implpath / "params.h", r"^#include \"\.\./", '#include "')
+        replace_in_file(
+            implpath / "params.h", "SPX_##s", f"{params.ns_name(impl)}_##s"
+        )
+        replace_in_file(
+            implpath / "sign.c", r"#include \"api\.h\"", '#include "nistapi.h"'
+        )
+
+        gen_makefile(params, implpath)
+        test_build(implpath)
+        unifdef(params, implpath)
+        replace_in_file(implpath / "utils.h", "# define SPX_VLA.*", "")
+        replace_in_file(
+            implpath / "utils.h",
+            '#include "context.h"',
+            '#include "compat.h"\n#include "context.h"',
+        )
+        remove_stupid_ifdef(implpath / "params.h", "#if SPX_TREE_HEIGHT * SPX_D != SPX_FULL_HEIGHT")
+        clang_tidy(implpath)
+        clang_tidy(implpath, check=True)
+        astyle(implpath)
+
+    set_testvectors(destpath, params)
+
+
+def get_sphincses() -> list[Sphincs]:
+    SPHINCSES: List[Sphincs] = [
+        Sphincs(size, variant, hash_, thash)
+        for size in (128, 192, 256)
+        for variant in ("small", "fast")
+        for hash_ in ("sha2", "shake", "haraka")
+        for thash in ("simple", "robust")
+    ]
+
+    def filterspx() -> Iterator[Sphincs]:
+        for sphincs in SPHINCSES:
+            #if sphincs.hash != "sha2":
+            #    continue
+            #if sphincs.thash != "simple":
+            #    continue
+            #if sphincs.size != 128:
+            #    continue
+            yield sphincs
+
+    return list(filterspx())
+
+
 if __name__ == "__main__":
     import hashlib
     import shutil
+    import multiprocessing
+    import functools
+    import sys
 
     logging.basicConfig(level=logging.DEBUG)
 
-    for params in SPHINCSES:
+    sphincses = get_sphincses()
+
+    for params in sphincses:
         apipath = Path("metadata/api") / (params.basefile + ".h")
         metapath = Path("metadata/meta") / (params.basefile + ".yml")
         with open(apipath, "w") as fh:
@@ -759,83 +874,5 @@ if __name__ == "__main__":
         shutil.rmtree(destpath)
     destpath.mkdir(parents=True, exist_ok=False)
 
-    for params in SPHINCSES:
-        sphincspath = destpath / params.basefile
-        sphincspath.mkdir()
-
-        logging.info("Generating metadata")
-        with (sphincspath / "META.yml").open("w") as fh:
-            fh.write(pqclean_metadata(params))
-
-        logging.info("Copying files")
-        for impl in params.implementations:
-            implpath = sphincspath / get_pqclean_impl_name(impl)
-            implpath.mkdir()
-
-            with (implpath / "api.h").open("w") as fh:
-                fh.write(gen_api_h(params, impl))
-
-            for (srcfile, destfn) in params.get_source_files(impl):
-                logging.debug("Copying %s to %s", srcfile, destfn)
-                shutil.copyfile(srcfile, implpath / destfn, follow_symlinks=True)
-                replace_in_file(implpath / destfn, "SPX_VLA", "PQCLEAN_VLA")
-
-            replace_in_file(implpath / "params.h", r"^#include \"\.\./", '#include "')
-            replace_in_file(
-                implpath / "params.h", "SPX_##s", f"{params.ns_name(impl)}_##s"
-            )
-            replace_in_file(
-                implpath / "sign.c", r"#include \"api\.h\"", '#include "nistapi.h"'
-            )
-
-            gen_makefile(params, implpath)
-            test_build(implpath)
-            unifdef(params, implpath)
-            replace_in_file(implpath / "utils.h", "# define SPX_VLA.*", "")
-            replace_in_file(
-                implpath / "utils.h",
-                '#include "context.h"',
-                '#include "compat.h"\n#include "context.h"',
-            )
-            remove_stupid_ifdef(implpath / "params.h", "#if SPX_TREE_HEIGHT * SPX_D != SPX_FULL_HEIGHT")
-            clang_tidy(implpath)
-            clang_tidy(implpath, check=True)
-            astyle(implpath)
-
-    for params in SPHINCSES:
-        impl = get_pqclean_impl_name(
-            cast(
-                Literal["aesni", "avx2"],
-                [impl for impl in params.implementations if impl not in ("ref", "a64")][
-                    0
-                ],
-            )
-        )
-        sourcepath = destpath / params.basefile / impl
-
-        subprocess.run(["make", "-C", sourcepath], check=True)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(
-                [
-                    "make",
-                    "-C",
-                    "pqclean-export/test",
-                    "testvectors",
-                    "TYPE=sign",
-                    f"SCHEME={params.basefile}",
-                    f"SCHEME_DIR={sourcepath.resolve()}",
-                    f"IMPLEMENTATION={impl}",
-                    f"DEST_DIR={tmpdir}",
-                ],
-                check=True,
-            )
-            out = subprocess.run(
-                [f"{tmpdir}/testvectors_{params.basefile}_{impl}"],
-                capture_output=True,
-                check=True,
-            )
-        output = out.stdout.replace(b"\r", b"")
-        vector = hashlib.sha256(output).hexdigest().lower()
-        replace_in_file(
-            destpath / params.basefile / "META.yml", "testvectorvalue", vector
-        )
+    with multiprocessing.Pool() as pool:
+        pool.map(functools.partial(generate_impl, destpath), sphincses)

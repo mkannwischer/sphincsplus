@@ -57,7 +57,11 @@ def run(name_size, bindir):
             stdout=subprocess.DEVNULL, stderr=sys.stderr, cwd=rundir, check=True)
         with open(os.path.join(rundir, rsp), 'rb') as f:
             h = hashlib.sha256(f.read()).hexdigest()
-            return f"{h} {name}"
+
+        os.makedirs(os.path.join("KAT", name), exist_ok=True)
+        shutil.copy(os.path.join(rundir, rsp), os.path.join("KAT", name))
+
+        return f"{h} {name}"
 
 def generate_sums():
     with tempfile.TemporaryDirectory() as bindir:

@@ -145,7 +145,7 @@ void gen_message_random(unsigned char *R, const unsigned char *sk_prf,
 
     /* If optrand + message cannot fill up an entire block */
     if (SPX_N + mlen < SPX_SHAX_BLOCK_BYTES) {
-        memcpy(buf + SPX_N, m, mlen);
+        memcpy(buf + SPX_N, m, (size_t)mlen);
         shaX_inc_finalize(buf + SPX_SHAX_BLOCK_BYTES, &state,
                             buf, mlen + SPX_N);
     }
@@ -156,7 +156,7 @@ void gen_message_random(unsigned char *R, const unsigned char *sk_prf,
 
         m += SPX_SHAX_BLOCK_BYTES - SPX_N;
         mlen -= SPX_SHAX_BLOCK_BYTES - SPX_N;
-        shaX_inc_finalize(buf + SPX_SHAX_BLOCK_BYTES, &state, m, mlen);
+        shaX_inc_finalize(buf + SPX_SHAX_BLOCK_BYTES, &state, m, (size_t)mlen);
     }
 
     for (i = 0; i < SPX_N; i++) {
@@ -207,8 +207,8 @@ void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
 
     /* If R + pk + message cannot fill up an entire block */
     if (SPX_N + SPX_PK_BYTES + mlen < SPX_INBLOCKS * SPX_SHAX_BLOCK_BYTES) {
-        memcpy(inbuf + SPX_N + SPX_PK_BYTES, m, mlen);
-        shaX_inc_finalize(seed + 2*SPX_N, &state, inbuf, SPX_N + SPX_PK_BYTES + mlen);
+        memcpy(inbuf + SPX_N + SPX_PK_BYTES, m, (size_t)mlen);
+        shaX_inc_finalize(seed + 2*SPX_N, &state, inbuf, (size_t)(SPX_N + SPX_PK_BYTES + mlen));
     }
     /* Otherwise first fill a block, so that finalize only uses the message */
     else {
@@ -218,7 +218,7 @@ void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
 
         m += SPX_INBLOCKS * SPX_SHAX_BLOCK_BYTES - SPX_N - SPX_PK_BYTES;
         mlen -= SPX_INBLOCKS * SPX_SHAX_BLOCK_BYTES - SPX_N - SPX_PK_BYTES;
-        shaX_inc_finalize(seed + 2*SPX_N, &state, m, mlen);
+        shaX_inc_finalize(seed + 2*SPX_N, &state, m, (size_t)mlen);
     }
 
     // H_msg: MGF1-SHA-X(R ‖ PK.seed ‖ seed)

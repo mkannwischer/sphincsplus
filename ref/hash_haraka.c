@@ -67,7 +67,7 @@ void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
     haraka_S_inc_init(s_inc);
     haraka_S_inc_absorb(s_inc, R, SPX_N, ctx);
     haraka_S_inc_absorb(s_inc, pk + SPX_N, SPX_N, ctx); // Only absorb root part of pk
-    haraka_S_inc_absorb(s_inc, m, mlen, ctx);
+    haraka_S_inc_absorb(s_inc, m, (size_t)mlen, ctx);
     haraka_S_inc_finalize(s_inc);
     haraka_S_inc_squeeze(buf, SPX_DGST_BYTES, s_inc, ctx);
 
