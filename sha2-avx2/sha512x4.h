@@ -39,6 +39,7 @@ void sha512x4_seeded(
     const unsigned char *in3,
     unsigned long long inlen);
 
+#define sha512_ctx_clone4x SPX_NAMESPACE(sha512_ctx_clone4x)
 void sha512_ctx_clone4x(sha512x4ctx *out, const sha512x4ctx *in);
 
 /**
