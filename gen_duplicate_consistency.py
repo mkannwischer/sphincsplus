@@ -113,7 +113,7 @@ def get_duplicates_basic(scheme: Sphincs, impl: ImplementationLiteralT):
             if impl == "a64":
                 dup_files += [
                     f"f1600x2.h",
-                    f"f1600x2.c",
+                    f"f1600x2_const.c",
                     f"f1600x2.s",
                 ]
 
