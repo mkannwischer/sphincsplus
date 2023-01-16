@@ -460,7 +460,7 @@ def implementation_metadata(impl: Literal['avx2', 'aesni', 'a64']):
     elif impl == "a64":
         print_impl = "aarch64"
         arch = "arm_8"
-        flags = ["asimd"]
+        flags = ["sha3"]
     else:
         assert False
 
