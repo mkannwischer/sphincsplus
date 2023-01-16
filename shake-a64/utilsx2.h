@@ -2,6 +2,8 @@
 #define SPX_UTILSX2_H
 
 #include <stdint.h>
+
+#include "context.h"
 #include "params.h"
 
 /**

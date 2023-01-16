@@ -24,6 +24,7 @@ ImplementationLiteralT = (
 BUILD_ENABLED = True
 
 
+
 def exclude_file(file: Path) -> bool:
     filename: str = str(file.name)
     if "PQCgenKAT" in filename:
@@ -94,6 +95,12 @@ class Sphincs:
 
     def __hash__(self):
         return hash((self.size, self.variant, self.hash, self.thash))
+
+    def __eq__(self, other) -> bool:
+        return (self.size == other.size
+                and self.variant == other.variant
+                and self.hash == other.hash
+                and self.thash == other.thash)
 
     @property
     def nist_level(self) -> Literal[1, 2, 3, 5]:
@@ -435,7 +442,7 @@ implementations:
 
 def implementation_metadata(impl: Literal['avx2', 'aesni', 'a64']):
     gitout = subprocess.run(
-        ["git", "rev-parse", "HEAD"], capture_output=True, text=True
+        ["git", "rev-parse", "master"], capture_output=True, text=True
     )
     commit = gitout.stdout.strip()
     if impl == "ref":
@@ -452,7 +459,7 @@ def implementation_metadata(impl: Literal['avx2', 'aesni', 'a64']):
         flags = ["aes"]
     elif impl == "a64":
         print_impl = "aarch64"
-        arch = "aarch64"
+        arch = "arm_8"
         flags = ["asimd"]
     else:
         assert False
