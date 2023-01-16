@@ -468,7 +468,7 @@ def implementation_metadata(impl: Literal['avx2', 'aesni', 'a64']):
   - name: {print_impl}
     version: https://github.com/sphincs/sphincsplus/commit/{commit}
     supported_platforms:
-      - architecture: {print_impl}
+      - architecture: {arch}
         required_flags: {flags!r}
 """
     if impl == "a64":
