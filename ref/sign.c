@@ -128,7 +128,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen,
        getting a large number of traces when the signer uses the same nodes. */
     randombytes(optrand, SPX_N);
     /* Compute the digest randomization value. */
-    gen_message_random(sig, sk_prf, optrand, m, (unsigned long long)mlen, &ctx);
+    gen_message_random(sig, sk_prf, optrand, m, mlen, &ctx);
 
     /* Derive the message digest and leaf index from R, PK and M. */
     hash_message(mhash, &tree, &idx_leaf, sig, pk, m, mlen, &ctx);
