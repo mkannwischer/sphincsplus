@@ -29,7 +29,7 @@ void prf_addr(unsigned char *out, const spx_ctx *ctx,
  */
 void gen_message_random(unsigned char *R, const unsigned char *sk_prf,
                         const unsigned char *optrand,
-                        const unsigned char *m, unsigned long long mlen,
+                        const unsigned char *m, size_t mlen,
                         const spx_ctx *ctx)
 {
     (void)ctx;
@@ -38,7 +38,7 @@ void gen_message_random(unsigned char *R, const unsigned char *sk_prf,
     shake256_inc_init(&s_inc);
     shake256_inc_absorb(&s_inc, sk_prf, SPX_N);
     shake256_inc_absorb(&s_inc, optrand, SPX_N);
-    shake256_inc_absorb(&s_inc, m, (size_t)mlen);
+    shake256_inc_absorb(&s_inc, m, mlen);
     shake256_inc_finalize(&s_inc);
     shake256_inc_squeeze(R, SPX_N, &s_inc);
     shake256_inc_ctx_release(&s_inc);
@@ -51,7 +51,7 @@ void gen_message_random(unsigned char *R, const unsigned char *sk_prf,
  */
 void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
                   const unsigned char *R, const unsigned char *pk,
-                  const unsigned char *m, unsigned long long mlen,
+                  const unsigned char *m, size_t mlen,
                   const spx_ctx *ctx)
 {
     (void)ctx;
@@ -68,7 +68,7 @@ void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
     shake256_inc_init(&s_inc);
     shake256_inc_absorb(&s_inc, R, SPX_N);
     shake256_inc_absorb(&s_inc, pk, SPX_PK_BYTES);
-    shake256_inc_absorb(&s_inc, m, (size_t)mlen);
+    shake256_inc_absorb(&s_inc, m, mlen);
     shake256_inc_finalize(&s_inc);
     shake256_inc_squeeze(buf, SPX_DGST_BYTES, &s_inc);
     shake256_inc_ctx_release(&s_inc);

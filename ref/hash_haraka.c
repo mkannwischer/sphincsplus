@@ -31,7 +31,7 @@ void prf_addr(unsigned char *out, const spx_ctx *ctx,
  */
 void gen_message_random(unsigned char *R, const unsigned char* sk_prf,
                         const unsigned char *optrand,
-                        const unsigned char *m, unsigned long long mlen,
+                        const unsigned char *m, size_t mlen,
                         const spx_ctx *ctx)
 {
     uint8_t s_inc[65];
@@ -51,7 +51,7 @@ void gen_message_random(unsigned char *R, const unsigned char* sk_prf,
  */
 void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
                   const unsigned char *R, const unsigned char *pk,
-                  const unsigned char *m, unsigned long long mlen,
+                  const unsigned char *m, size_t mlen,
                   const spx_ctx *ctx)
 {
 #define SPX_TREE_BITS (SPX_TREE_HEIGHT * (SPX_D - 1))
@@ -67,7 +67,7 @@ void hash_message(unsigned char *digest, uint64_t *tree, uint32_t *leaf_idx,
     haraka_S_inc_init(s_inc);
     haraka_S_inc_absorb(s_inc, R, SPX_N, ctx);
     haraka_S_inc_absorb(s_inc, pk + SPX_N, SPX_N, ctx); // Only absorb root part of pk
-    haraka_S_inc_absorb(s_inc, m, (size_t)mlen, ctx);
+    haraka_S_inc_absorb(s_inc, m, mlen, ctx);
     haraka_S_inc_finalize(s_inc);
     haraka_S_inc_squeeze(buf, SPX_DGST_BYTES, s_inc, ctx);
 
