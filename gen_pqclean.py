@@ -764,30 +764,28 @@ def set_testvectors(destpath: Path, params: Sphincs):
     )
 
 
-TIDY_LOCK = multiprocessing.Lock()
 
 def clang_tidy(implpath: Path, check=False):
-    with TIDY_LOCK:
-        subprocess.run(
-            [
-                "clang-tidy",  #'-quiet',
-                "--config-file=pqclean-export/.clang-tidy",
-                "-header-filter=.*",
-                "--fix",
-                "--fix-errors",
-                "--fix-notes",
-                *list(implpath.glob("*.c")),
-                *list(Path("pqclean-export/common").glob("*.c")),
-                "--",
-                "-iquote",
-                "pqclean-export/test/common",
-                "-iquote",
-                "pqclean-export/common",
-                "-iquote",
-                implpath,
-            ],
-            check=check,
-        )
+    subprocess.run(
+        [
+            "clang-tidy",  #'-quiet',
+            "--config-file=pqclean-export/.clang-tidy",
+            "-header-filter=.*",
+            "--fix",
+            "--fix-errors",
+            "--fix-notes",
+            *list(implpath.glob("*.c")),
+            *list(Path("pqclean-export/common").glob("*.c")),
+            "--",
+            "-iquote",
+            "pqclean-export/test/common",
+            "-iquote",
+            "pqclean-export/common",
+            "-iquote",
+            implpath,
+        ],
+        check=check,
+    )
 
 
 
