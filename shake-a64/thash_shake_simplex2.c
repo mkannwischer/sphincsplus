@@ -6,6 +6,7 @@
 
 #include "address.h"
 #include "params.h"
+#include "utils.h"
 
 #include "f1600x2.h"
 #include "fips202x2.h"
@@ -67,8 +68,8 @@ void thashx2(unsigned char *out0,
             store64(out1 + 8*i, state[2*i+1]);
         }
     } else {
-        unsigned char buf0[SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N];
-        unsigned char buf1[SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N];
+        SPX_VLA(unsigned char, buf0, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
+        SPX_VLA(unsigned char, buf1, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
 
         memcpy(buf0, ctx->pub_seed, SPX_N);
         memcpy(buf1, ctx->pub_seed, SPX_N);

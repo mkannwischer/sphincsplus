@@ -2,6 +2,7 @@
 
 import fileinput
 import logging
+import multiprocessing
 import tempfile
 import re
 import subprocess
@@ -763,27 +764,30 @@ def set_testvectors(destpath: Path, params: Sphincs):
     )
 
 
+TIDY_LOCK = multiprocessing.Lock()
+
 def clang_tidy(implpath: Path, check=False):
-    subprocess.run(
-        [
-            "clang-tidy",  #'-quiet',
-            "--config-file=pqclean-export/.clang-tidy",
-            "-header-filter=.*",
-            "--fix",
-            "--fix-errors",
-            "--fix-notes",
-            *list(implpath.glob("*.c")),
-            *list(Path("pqclean-export/common").glob("*.c")),
-            "--",
-            "-iquote",
-            "pqclean-export/test/common",
-            "-iquote",
-            "pqclean-export/common",
-            "-iquote",
-            implpath,
-        ],
-        check=check,
-    )
+    with TIDY_LOCK:
+        subprocess.run(
+            [
+                "clang-tidy",  #'-quiet',
+                "--config-file=pqclean-export/.clang-tidy",
+                "-header-filter=.*",
+                "--fix",
+                "--fix-errors",
+                "--fix-notes",
+                *list(implpath.glob("*.c")),
+                *list(Path("pqclean-export/common").glob("*.c")),
+                "--",
+                "-iquote",
+                "pqclean-export/test/common",
+                "-iquote",
+                "pqclean-export/common",
+                "-iquote",
+                implpath,
+            ],
+            check=check,
+        )
 
 
 
@@ -819,7 +823,8 @@ def generate_impl(destpath: Path, params: Sphincs):
         gen_makefile(params, implpath)
         test_build(implpath)
         unifdef(params, implpath)
-        replace_in_file(implpath / "utils.h", "# define SPX_VLA.*", "")
+        replace_in_file(implpath / "utils.h", r"/\*.* #20 .*\*/", "")
+        replace_in_file(implpath / "utils.h", "# define PQCLEAN_VLA.*", "")
         replace_in_file(
             implpath / "utils.h",
             '#include "context.h"',
@@ -858,7 +863,6 @@ def get_sphincses() -> list[Sphincs]:
 if __name__ == "__main__":
     import hashlib
     import shutil
-    import multiprocessing
     import functools
     import sys
 

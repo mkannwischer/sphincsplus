@@ -376,7 +376,7 @@ void mgf1x4_512(unsigned char *outx4, unsigned long outlen,
             const unsigned char *in3,
             unsigned long inlen)
 {
-    unsigned char inbufx4[4*(inlen + 4)];
+    SPX_VLA(unsigned char, inbufx4, 4 * (inlen + 4));
     unsigned char outbuf[4*64];
     uint32_t i;
     unsigned int j;

@@ -67,7 +67,7 @@ void thashx8(unsigned char *out0,
         return;
     }
 #endif
-    unsigned char bufx8[8*(SPX_SHA256_ADDR_BYTES + inblocks*SPX_N)];
+    SPX_VLA(unsigned char, bufx8, 8 * (SPX_SHA256_ADDR_BYTES + inblocks * SPX_N));
     unsigned char outbufx8[8*SPX_SHA256_OUTPUT_BYTES];
     unsigned int i;
 
@@ -155,7 +155,7 @@ static void thashx8_512(
     const spx_ctx *ctx,
     uint32_t addrx8[8*8])
 {
-    unsigned char bufx8[8*(SPX_SHA256_ADDR_BYTES + inblocks*SPX_N)];
+    SPX_VLA(unsigned char, bufx8, 8 * (SPX_SHA256_ADDR_BYTES + inblocks*SPX_N));
     unsigned char outbuf[4*SPX_SHA512_OUTPUT_BYTES];
     unsigned int i;
 
