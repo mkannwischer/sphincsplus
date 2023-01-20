@@ -505,6 +505,9 @@ def test_build(implpath) -> None:
     if implpath.name == "aarch64":
         return
     subprocess.run(["make", "-j4", "-C", implpath], check=True, capture_output=False)
+
+
+def make_clean(implpath) -> None:
     subprocess.run(["make", "-C", implpath, "clean"], check=True, capture_output=False)
 
 
@@ -589,9 +592,9 @@ clean:
     keccakdel = ""
     if export_path.name in ("avx2", "aesni"):
         archflag = "/arch:AVX "
+    if export_path.name == "avx2" and params.hash == "shake":
         keccak = (
-            rf"""\
-
+            rf"""
 KECCAK4XDIR=..\..\..\common\keccak4x
 KECCAK4XOBJ=KeccakP-1600-times4-SIMD256.obj
 KECCAK4X=$(KECCAK4XDIR)\$(KECCAK4XOBJ)"""
@@ -616,6 +619,8 @@ CFLAGS = /nologo /O2 {archflag}/I ..\\..\\..\\common /W4 /WX
 all: $(LIBRARY)
 
 $(OBJECTS): *.h
+
+{keccak}
 
 $(LIBRARY): $(OBJECTS) {keccaklib}
 \tLIB.EXE /NOLOGO /WX /OUT:$@ $**
@@ -885,3 +890,7 @@ if __name__ == "__main__":
 
     with multiprocessing.Pool() as pool:
         pool.map(functools.partial(generate_impl, destpath), sphincses)
+
+    for path in Path("pqclean-export/crypto_sign").glob("*/*"):
+        if path.is_dir():
+            make_clean(path)
