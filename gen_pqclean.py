@@ -848,8 +848,8 @@ def get_sphincses() -> list[Sphincs]:
         Sphincs(size, variant, hash_, thash)
         for size in (128, 192, 256)
         for variant in ("small", "fast")
-        for hash_ in ("sha2", "shake", "haraka")
-        for thash in ("simple", "robust")
+        for hash_ in ("sha2", "shake")
+        for thash in ("simple",)
     ]
 
     def filterspx() -> Iterator[Sphincs]:

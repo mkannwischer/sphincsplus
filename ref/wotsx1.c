@@ -32,7 +32,7 @@ void wots_gen_leafx1(unsigned char *dest,
         wots_k_mask = 0;
     } else {
         /* Nope, we're just generating pk's; turn off the signature logic */
-        wots_k_mask = (uint32_t)~0;
+        wots_k_mask = ~0U;
     }
 
     set_keypair_addr( leaf_addr, leaf_idx );
