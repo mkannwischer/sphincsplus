@@ -1,2 +1,6 @@
 metadata/*
+!metadata/Makefile
+!metadata/test_api_h.c
 *.o
+KAT/*
+__pycache__/*
