@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import fileinput
+import hashlib
 import logging
+import shutil
 import multiprocessing
 import tempfile
 import re
@@ -494,7 +496,7 @@ def test_api_h(params: Sphincs):
             f"PARAMS=sphincs-{params.hash}-{params.size}{params.variant[0]}",
         ],
         check=True,
-        capture_output=True,
+        capture_output=False,
     )
     subprocess.run(["./metadata/test_api_h"], check=True)
 
@@ -864,11 +866,6 @@ def get_sphincses() -> list[Sphincs]:
 
 
 if __name__ == "__main__":
-    import hashlib
-    import shutil
-    import functools
-    import sys
-
     logging.basicConfig(level=logging.DEBUG)
 
     sphincses = get_sphincses()
