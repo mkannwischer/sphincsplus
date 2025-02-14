@@ -150,7 +150,7 @@ static void wots_checksum(unsigned int *csum_base_w,
 }
 
 /* Takes a message and derives the matching chain lengths. */
-void chain_lengths(unsigned int *lengths, const unsigned char *msg)
+void chain_lengths(uint32_t *lengths, const unsigned char *msg)
 {
     base_w(lengths, SPX_WOTS_LEN1, msg);
     wots_checksum(lengths + SPX_WOTS_LEN1, lengths);
