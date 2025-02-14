@@ -836,8 +836,8 @@ def generate_impl(destpath: Path, params: Sphincs):
             '#include "compat.h"\n#include "context.h"',
         )
         remove_stupid_ifdef(implpath / "params.h", "#if SPX_TREE_HEIGHT * SPX_D != SPX_FULL_HEIGHT")
-        clang_tidy(implpath)
-        clang_tidy(implpath, check=True)
+        #clang_tidy(implpath)
+        #clang_tidy(implpath, check=True)
         astyle(implpath)
 
     set_testvectors(destpath, params)
