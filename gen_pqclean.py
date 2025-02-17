@@ -775,14 +775,13 @@ def set_testvectors(destpath: Path, params: Sphincs):
 def clang_tidy(implpath: Path, check=False):
     subprocess.run(
         [
-            "clang-tidy",  #'-quiet',
+            "clang-tidy", #'-quiet',
             "--config-file=pqclean-export/.clang-tidy",
             "-header-filter=.*",
             "--fix",
             "--fix-errors",
             "--fix-notes",
             *list(implpath.glob("*.c")),
-            *list(Path("pqclean-export/common").glob("*.c")),
             "--",
             "-iquote",
             "pqclean-export/test/common",
@@ -793,8 +792,6 @@ def clang_tidy(implpath: Path, check=False):
         ],
         check=check,
     )
-
-
 
 def generate_impl(destpath: Path, params: Sphincs):
     sphincspath = destpath / params.basefile
@@ -836,8 +833,11 @@ def generate_impl(destpath: Path, params: Sphincs):
             '#include "compat.h"\n#include "context.h"',
         )
         remove_stupid_ifdef(implpath / "params.h", "#if SPX_TREE_HEIGHT * SPX_D != SPX_FULL_HEIGHT")
-        #clang_tidy(implpath)
-        #clang_tidy(implpath, check=True)
+        clang_tidy(implpath)
+        clang_tidy(implpath)
+        clang_tidy(implpath)
+        clang_tidy(implpath)
+        clang_tidy(implpath, check=True)
         astyle(implpath)
 
     set_testvectors(destpath, params)
