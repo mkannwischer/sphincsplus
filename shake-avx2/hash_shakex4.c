@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <immintrin.h>
 
 #include "hashx4.h"
 

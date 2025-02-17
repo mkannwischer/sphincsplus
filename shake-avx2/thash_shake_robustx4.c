@@ -97,14 +97,14 @@ void thashx4(unsigned char *out0,
             ((int64_t*)out3)[i] = _mm256_extract_epi64(state2[i], 3);
         }
     } else {
-        SPX_VLA(unsigned char, buf0, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
-        SPX_VLA(unsigned char, buf1, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
-        SPX_VLA(unsigned char, buf2, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
-        SPX_VLA(unsigned char, buf3, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
-        SPX_VLA(unsigned char, bitmask0, inblocks*SPX_N);
-        SPX_VLA(unsigned char, bitmask1, inblocks*SPX_N);
-        SPX_VLA(unsigned char, bitmask2, inblocks*SPX_N);
-        SPX_VLA(unsigned char, bitmask3, inblocks*SPX_N);
+        SPX_VLA(unsigned char, buf0, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
+        SPX_VLA(unsigned char, buf1, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
+        SPX_VLA(unsigned char, buf2, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
+        SPX_VLA(unsigned char, buf3, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
+        SPX_VLA(unsigned char, bitmask0, (inblocks*SPX_N));
+        SPX_VLA(unsigned char, bitmask1, (inblocks*SPX_N));
+        SPX_VLA(unsigned char, bitmask2, (inblocks*SPX_N));
+        SPX_VLA(unsigned char, bitmask3, (inblocks*SPX_N));
         unsigned int i;
 
         memcpy(buf0, ctx->pub_seed, SPX_N);
@@ -127,6 +127,6 @@ void thashx4(unsigned char *out0,
         }
 
         shake256x4(out0, out1, out2, out3, SPX_N,
-                   buf0, buf1, buf2, buf3, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
+                   buf0, buf1, buf2, buf3, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
     }
 }

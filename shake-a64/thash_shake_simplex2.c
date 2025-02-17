@@ -68,8 +68,8 @@ void thashx2(unsigned char *out0,
             store64(out1 + 8*i, state[2*i+1]);
         }
     } else {
-        SPX_VLA(unsigned char, buf0, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
-        SPX_VLA(unsigned char, buf1, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
+        SPX_VLA(unsigned char, buf0, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
+        SPX_VLA(unsigned char, buf1, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
 
         memcpy(buf0, ctx->pub_seed, SPX_N);
         memcpy(buf1, ctx->pub_seed, SPX_N);
@@ -79,6 +79,6 @@ void thashx2(unsigned char *out0,
         memcpy(buf1 + SPX_N + SPX_ADDR_BYTES, in1, inblocks * SPX_N);
 
         shake256x2(out0, out1, SPX_N,
-                   buf0, buf1, SPX_N + SPX_ADDR_BYTES + inblocks*SPX_N);
+                   buf0, buf1, SPX_N + SPX_ADDR_BYTES + (inblocks*SPX_N));
     }
 }

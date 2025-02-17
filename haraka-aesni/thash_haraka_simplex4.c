@@ -23,10 +23,10 @@ void thashx4(unsigned char *out0,
              const unsigned char *in3, unsigned int inblocks,
              const spx_ctx *ctx, uint32_t addrx4[4*8])
 {
-    SPX_VLA(unsigned char, buf0, SPX_ADDR_BYTES + inblocks*SPX_N);
-    SPX_VLA(unsigned char, buf1, SPX_ADDR_BYTES + inblocks*SPX_N);
-    SPX_VLA(unsigned char, buf2, SPX_ADDR_BYTES + inblocks*SPX_N);
-    SPX_VLA(unsigned char, buf3, SPX_ADDR_BYTES + inblocks*SPX_N);
+    SPX_VLA(unsigned char, buf0, SPX_ADDR_BYTES + (inblocks*SPX_N));
+    SPX_VLA(unsigned char, buf1, SPX_ADDR_BYTES + (inblocks*SPX_N));
+    SPX_VLA(unsigned char, buf2, SPX_ADDR_BYTES + (inblocks*SPX_N));
+    SPX_VLA(unsigned char, buf3, SPX_ADDR_BYTES + (inblocks*SPX_N));
     unsigned char outbuf[32 * 4];
     unsigned char buf_tmp[64 * 4];
 
