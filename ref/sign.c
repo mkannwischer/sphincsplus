@@ -241,7 +241,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen,
     free_hash_function(&ctx);
 
     /* Check if the root node equals the root node in the public key. */
-    if (memcmp(root, pub_root, SPX_N)) {
+    if (memcmp(root, pub_root, SPX_N) != 0) {
         return -1;
     }
 

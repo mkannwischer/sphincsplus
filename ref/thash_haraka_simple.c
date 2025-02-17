@@ -14,7 +14,7 @@
 void thash(unsigned char *out, const unsigned char *in, unsigned int inblocks,
            const spx_ctx *ctx, uint32_t addr[8])
 {
-    SPX_VLA(uint8_t, buf, SPX_ADDR_BYTES + inblocks*SPX_N);
+    SPX_VLA(uint8_t, buf, SPX_ADDR_BYTES + (inblocks*SPX_N)););
     unsigned char outbuf[32];
     unsigned char buf_tmp[64];
 

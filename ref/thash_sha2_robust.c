@@ -28,7 +28,7 @@ void thash(unsigned char *out, const unsigned char *in, unsigned int inblocks,
 #endif
     unsigned char outbuf[SPX_SHA256_OUTPUT_BYTES];
     SPX_VLA(uint8_t, bitmask, inblocks * SPX_N);
-    SPX_VLA(uint8_t, buf, SPX_N + SPX_SHA256_OUTPUT_BYTES + inblocks*SPX_N);
+    SPX_VLA(uint8_t, buf, SPX_N + SPX_SHA256_OUTPUT_BYTES + (inblocks*SPX_N));
     sha256ctx sha2_state;
     unsigned int i;
 
@@ -44,7 +44,7 @@ void thash(unsigned char *out, const unsigned char *in, unsigned int inblocks,
     }
 
     sha256_inc_finalize(outbuf, &sha2_state, buf + SPX_N,
-                        SPX_SHA256_ADDR_BYTES + inblocks*SPX_N);
+                        SPX_SHA256_ADDR_BYTES + (inblocks*SPX_N));
     memcpy(out, outbuf, SPX_N);
 }
 
@@ -54,7 +54,7 @@ static void thash_512(unsigned char *out, const unsigned char *in, unsigned int 
 {
     unsigned char outbuf[SPX_SHA512_OUTPUT_BYTES];
     SPX_VLA(uint8_t, bitmask, inblocks * SPX_N);
-    SPX_VLA(uint8_t, buf, SPX_N + SPX_SHA256_ADDR_BYTES + inblocks*SPX_N);
+    SPX_VLA(uint8_t, buf, SPX_N + SPX_SHA256_ADDR_BYTES + (inblocks*SPX_N));
     sha512ctx sha2_state;
     unsigned int i;
 
@@ -70,7 +70,7 @@ static void thash_512(unsigned char *out, const unsigned char *in, unsigned int 
     }
 
     sha512_inc_finalize(outbuf, &sha2_state, buf + SPX_N,
-                        SPX_SHA256_ADDR_BYTES + inblocks*SPX_N);
+                        SPX_SHA256_ADDR_BYTES + (inblocks*SPX_N));
     memcpy(out, outbuf, SPX_N);
 }
 #endif
